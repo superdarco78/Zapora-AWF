@@ -17,7 +17,7 @@ jobs:
           python-version: '3.12'
 
       - name: Zainstaluj PyInstaller
-        run: python -m pip install --upgrade pip pyinstaller
+        run: python -m pip install --upgrade pip pyinstaller pillow
 
       - name: Zbuduj aplikacje
         run: >
@@ -28,6 +28,16 @@ jobs:
           --manifest manifest.xml
           --add-data "ikona.ico;."
           --add-data "logo.png;."
+          --add-data "kiosk-tlo.jpg;."
+          --add-data "kiosk-uklad.json;."
+          --add-data "kiosk-korpus1.png;."
+          --add-data "kiosk-korpus2.png;."
+          --add-data "kiosk-korpus3.png;."
+          --add-data "kiosk-korpus4.png;."
+          --add-data "kiosk-plyta1.png;."
+          --add-data "kiosk-plyta2.png;."
+          --add-data "kiosk-plyta3.png;."
+          --add-data "kiosk-plyta4.png;."
           zapora_awf.py
 
       - name: Zainstaluj Inno Setup
