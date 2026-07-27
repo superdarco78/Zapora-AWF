@@ -1,0 +1,37 @@
+{
+  "tlo": "kiosk-tlo.png",
+  "scena": [
+    1140,
+    460
+  ],
+  "slupki": [
+    {
+      "plik": "kiosk-slupek1.png",
+      "cx": 97,
+      "grunt": 179,
+      "wys": 106,
+      "szer": 42
+    },
+    {
+      "plik": "kiosk-slupek2.png",
+      "cx": 323,
+      "grunt": 201,
+      "wys": 131,
+      "szer": 51
+    },
+    {
+      "plik": "kiosk-slupek3.png",
+      "cx": 469,
+      "grunt": 227,
+      "wys": 143,
+      "szer": 55
+    },
+    {
+      "plik": "kiosk-slupek4.png",
+      "cx": 652,
+      "grunt": 264,
+      "wys": 185,
+      "szer": 63
+    }
+  ]
+}

@@ -1,7 +1,48 @@
-# ZAPORA-AWF v4.8
+# ZAPORA-AWF v5.0
 
 Akademia Wychowania Fizycznego Jozefa Pilsudskiego w Warszawie — Straz Akademicka.
 System kontroli wjazdu: zapora slupkowa ze slupkami chowanymi w jezdnie.
+
+## NOWE w v5.0 — scena z prawdziwego zdjecia wjazdu
+
+Podglad nie jest juz rysunkiem. Tlem jest **fotografia Waszego wjazdu**,
+a slupki, ktore sie chowaja, sa **wyciete z tego samego zdjecia**.
+Zadne piksele nie sa dorysowywane — kazda klatka animacji to ten sam wycinek
+fotografii, tylko krotszy.
+
+### Jak to zostalo przygotowane
+
+1. **Wyciecie slupkow** — cztery slupki BFT wraz z plytami podstawy, z maska
+   w ksztalcie kolumny (prawdziwy slupek jest rownym walcem, wiec rowna
+   krawedz cieca jest blizsza prawdy niz obrys po kolorze, ktory wychodzil
+   poszarpany przez prety ogrodzenia).
+2. **Zaklejenie dziur** — program przeszukuje kilkaset fragmentow bruku wokol
+   i wybiera ten o najlepiej pasujacej jasnosci i rozrzucie, a nastepnie
+   **wyrownuje mu kolor kanal po kanale** do bruku dookola.
+3. **Kontrola** — najpierw zmierzony zostal naturalny rozrzut samego bruku
+   (26 stopni jasnosci), a potem slad po kazdym slupku. Wyniki: 22, 22, 10 i 6.
+   Wszystkie ponizej naturalnego rozrzutu, czyli slad jest mniejszy niz roznica
+   miedzy dwiema sasiednimi kostkami.
+
+Duzy slupek CAME po prawej i biale kamienne w tle pozostaja nieruchome,
+tak jak w rzeczywistosci — chowaja sie **tylko te cztery srodkowe**.
+
+### Panele i przyciski na zdjeciu
+
+Panele informacyjne sa **naprawde przezroczyste** — widac przez nie bruk.
+Tkinter nie potrafi przezroczystosci na plotnie, wiec panele sa wtapiane
+w fotografie jeszcze przed wyswietleniem.
+
+Na dolnym pasku sa trzy przyciski wtopione w obraz:
+**SYMULUJ PRZEJAZD**, **OTWORZ**, **ZAMKNIJ** — klikalne bezposrednio na zdjeciu.
+
+Stan wyswietla sie w prawym gornym rogu razem z imieniem i numerem
+osoby wjezdzajacej, a przy odmowie — z powodem.
+
+### Powrot do sceny rysowanej
+
+W ustawieniach obiektu jest przelacznik **„Scena z prawdziwego zdjecia wjazdu"**.
+Po odznaczeniu wraca rysowana scena ze slupkami, szlabanem albo brama przesuwna.
 
 ## NOWE w v4.8 — osobna zakladka STEROWNIK
 

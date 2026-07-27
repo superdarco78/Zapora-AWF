@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from tkinter import filedialog, messagebox, ttk
 
 APP = "ZAPORA-AWF"
-VER = "4.8"
+VER = "5.0"
 DATA_WYD = "27.07.2026"
 
 # paleta
@@ -156,7 +156,7 @@ def nowy_modul():
     return {"nazwa": "Brama glowna", "sim": "", "typ": TYPY_MODULOW[0],
             "haslo": "1234", "tryb": "impuls", "impuls_ms": 500,
             "czas_otwarcia": 8, "autozamykanie": True, "opoznienie": 2,
-            "wyglad": "slupki", "tryb_sterowania": "CLIP+SMS",
+            "wyglad": "slupki", "zdjecie": True, "tryb_sterowania": "CLIP+SMS",
             "tryb_pracy": "prywatny", "zalaczenie_s": 1, "numery": []}
 
 
@@ -183,6 +183,49 @@ def sprawdz_dostep(n, teraz=None, modul=None):
     if not ok:
         return False, f"poza godzinami {od}-{do}"
     return True, "uprawniony"
+
+
+def wczytaj_foto():
+    """Material zdjeciowy: prawdziwy wjazd + slupki wyciete z tego samego zdjecia.
+
+    Panele sterowania sa wtapiane w zdjecie z prawdziwa przezroczystoscia,
+    bo tkinter sam nie potrafi przezroczystosci na plotnie.
+    """
+    try:
+        from PIL import Image as _Img, ImageDraw as _Draw
+        uk = zasob("kiosk-uklad.json")
+        tl = zasob("kiosk-tlo.png")
+        if not uk or not tl:
+            return None
+        with open(uk, "r", encoding="utf-8") as f:
+            dane = json.load(f)
+        tlo = _Img.open(tl).convert("RGB")
+        W, H = tlo.size
+
+        # --- przezroczyste panele wtopione w zdjecie ---
+        nak = _Img.new("RGBA", (W, H), (0, 0, 0, 0))
+        d = _Draw.Draw(nak)
+        d.rounded_rectangle([16, 16, 322, 96], radius=12, fill=(8, 14, 22, 155))
+        d.rounded_rectangle([W - 348, 16, W - 16, 118], radius=12, fill=(8, 14, 22, 155))
+        d.rounded_rectangle([16, H - 74, 470, H - 16], radius=12, fill=(8, 14, 22, 150))
+        # trzy przyciski w dolnym pasku
+        for x1, x2 in PRZYCISKI_X:
+            d.rounded_rectangle([x1, H - 64, x2, H - 26], radius=9,
+                                fill=(255, 255, 255, 34), outline=(255, 255, 255, 90))
+        dane["_tlo"] = _Img.alpha_composite(tlo.convert("RGBA"), nak).convert("RGB")
+
+        for sl in dane["slupki"]:
+            sc = zasob(sl["plik"])
+            if not sc:
+                return None
+            sl["_obraz"] = _Img.open(sc).convert("RGBA")
+        return dane
+    except Exception:
+        return None
+
+
+PRZYCISKI_X = [(30, 168), (180, 288), (300, 456)]
+PRZYCISKI_OPIS = ["SYMULUJ PRZEJAZD", "OTWORZ", "ZAMKNIJ"]
 
 
 def platform_wersja():
@@ -319,6 +362,12 @@ class Scena(tk.Canvas):
         self.opoznienie = 2         # sekundy zwloki przed startem zamykania
         self.tryb = "impuls"
         self.odliczanie = 0.0
+        self.foto = None            # material zdjeciowy, gdy tryb zdjeciowy wlaczony
+        self.nazwa_obiektu = "ZAPORA"
+        self.on_przycisk = None
+        self.bind("<Button-1>", self.klik_foto)
+        self._cache_foto = {}
+        self._tk_obrazy = []
         self._petla()
 
     # ---------- pomocnicze ----------
@@ -377,6 +426,12 @@ class Scena(tk.Canvas):
         px = self.PX
         p = self.postep
         kat = math.radians(self.postep * self.KAT_MAX)
+
+        # --- wariant zdjeciowy: prawdziwy wjazd ---
+        if self.foto:
+            self.rysuj_foto(p, mig)
+            self.hud(W)
+            return
 
         # --- wariant: slupki chowane w jezdnie ---
         if getattr(self, "vtyp_bramy", "slupki") == "slupki":
@@ -467,6 +522,85 @@ class Scena(tk.Canvas):
 
         # --- HUD ---
         self.hud(W)
+
+    def rysuj_foto(self, p, mig):
+        """Scena z prawdziwego zdjecia wjazdu.
+
+        Kazda klatka to ten sam wycinek zdjecia, tylko krotszy — zadne piksele
+        nie sa dorysowywane, wszystkie pochodza z oryginalu.
+        """
+        from PIL import ImageTk
+        self._tk_obrazy = []
+        f = self.foto
+        W, H = f["_tlo"].size
+
+        if "tlo" not in self._cache_foto:
+            self._cache_foto["tlo"] = ImageTk.PhotoImage(f["_tlo"])
+        self._tk_obrazy.append(self._cache_foto["tlo"])
+        self.create_image(0, 0, image=self._cache_foto["tlo"], anchor="nw")
+
+        # slupki — widoczna zostaje gorna czesc, reszta chowa sie w bruku
+        krok = max(0, min(48, int(round((1.0 - p) * 48))))
+        for i, sl in enumerate(f["slupki"]):
+            widoczne = int(sl["wys"] * krok / 48.0)
+            if widoczne < 3:
+                continue
+            klucz = (i, krok)
+            if klucz not in self._cache_foto:
+                kadr = sl["_obraz"].crop((0, 0, sl["szer"], widoczne))
+                self._cache_foto[klucz] = ImageTk.PhotoImage(kadr)
+            obr = self._cache_foto[klucz]
+            self._tk_obrazy.append(obr)
+            self.create_image(sl["cx"], sl["grunt"] - widoczne, image=obr, anchor="n")
+
+        self.hud_foto(W, H, p, mig)
+
+    def hud_foto(self, W, H, p, mig):
+        """Napisy i przyciski na wtopionych panelach."""
+        self.create_text(34, 42, text=self.nazwa_obiektu, anchor="w", fill="#f2f6fb",
+                         font=("Segoe UI Semibold", 12))
+        self.create_text(34, 68, text=datetime.now().strftime("%d.%m.%Y   %H:%M:%S"),
+                         anchor="w", fill="#b9c6d6", font=("Consolas", 10))
+
+        stan = {"spoczynek": ("SLUPKI PODNIESIONE", "#e8eef6"),
+                "jedzie": ("POJAZD PODJEZDZA", "#e8eef6"),
+                "dzwoni": ("POLACZENIE PRZYCHODZACE", "#f2b544"),
+                "otwieranie": ("OPUSZCZANIE SLUPKOW", "#4ade80"),
+                "otwarty": ("PRZEJAZD WOLNY", "#4ade80"),
+                "otwarty_stop": ("PRZEJAZD WOLNY — czeka", "#f2b544"),
+                "czekanie": (f"ZAMKNIECIE ZA {self.odliczanie:.0f} s", "#f2b544"),
+                "zamykanie": ("PODNOSZENIE SLUPKOW", "#f2b544"),
+                "odmowa": ("DOSTEP ZABLOKOWANY", "#ff6b6b"),
+                "cofa": ("DOSTEP ZABLOKOWANY", "#ff6b6b")}.get(self.faza,
+                                                               ("GOTOWA", "#e8eef6"))
+        self.create_oval(W - 330, 38, W - 320, 48, fill=stan[1], outline="")
+        self.create_text(W - 308, 43, text=stan[0], anchor="w", fill=stan[1],
+                         font=("Segoe UI Semibold", 11))
+        if self.kto:
+            self.create_text(W - 330, 72, text=self.kto, anchor="w", fill="#f2f6fb",
+                             font=("Segoe UI", 11))
+            self.create_text(W - 330, 96, text=self.tel, anchor="w", fill="#b9c6d6",
+                             font=("Consolas", 10))
+        if self.powod:
+            self.create_text(W - 330, 96, text=self.powod, anchor="w", fill="#ff6b6b",
+                             font=("Segoe UI", 9))
+
+        for (x1, x2), opis in zip(PRZYCISKI_X, PRZYCISKI_OPIS):
+            self.create_text((x1 + x2) / 2, H - 45, text=opis, fill="#f2f6fb",
+                             font=("Segoe UI Semibold", 9))
+
+    def klik_foto(self, zdarzenie):
+        """Obsluga przyciskow wtopionych w zdjecie."""
+        if not self.foto:
+            return
+        H = self.foto["_tlo"].size[1]
+        if not (H - 64 <= zdarzenie.y <= H - 26):
+            return
+        for i, (x1, x2) in enumerate(PRZYCISKI_X):
+            if x1 <= zdarzenie.x <= x2:
+                if self.on_przycisk:
+                    self.on_przycisk(i)
+                return
 
     def rysuj_slupki(self, px, GY, p, mig):
         """Slupki blokujace chowane w jezdnie.
@@ -855,6 +989,7 @@ class App(tk.Tk):
             pass
 
         self.d = wczytaj()
+        self.foto_material = None
         ustaw_motyw(self.d.get("motyw", "ciemny"))
         self.configure(bg=BG)
         self.mod_idx = 0
@@ -1349,6 +1484,14 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
                                  f"   ·   {m.get('typ', '')}")
         self.scena.parametry(m)
         self.scena.vtyp_bramy = m.get("wyglad", "slupki")
+        self.scena.nazwa_obiektu = m["nazwa"].upper()
+        self.scena.on_przycisk = self.przycisk_sceny
+        if m.get("zdjecie", True):
+            if self.foto_material is None:
+                self.foto_material = wczytaj_foto()
+            self.scena.foto = self.foto_material
+        else:
+            self.scena.foto = None
 
         for i in self.tv.get_children():
             self.tv.delete(i)
@@ -1520,6 +1663,15 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         self.scena.przejazd(n.get("imie", "?"), n.get("tel", ""), ok, powod)
         self.zapisz_wjazd(n.get("imie", "?"), n.get("tel", ""),
                           "przejazd (telefon)" if ok else f"ODMOWA — {powod}")
+
+    def przycisk_sceny(self, nr):
+        """Klikniecie przycisku wtopionego w zdjecie."""
+        if nr == 0:
+            self.przejazd()
+        elif nr == 1:
+            self.reczne(True)
+        else:
+            self.reczne(False)
 
     def reczne(self, otwierac):
         if self.scena.busy:
@@ -1967,7 +2119,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         w = tk.Toplevel(self)
         w.title("Modul GSM")
         w.configure(bg=BG2)
-        w.geometry("500x780")
+        w.geometry("500x860")
         w.transient(self)
         w.grab_set()
         w.resizable(False, False)
@@ -2044,6 +2196,14 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         tk.Label(w, text="CLIP = otwiera samo polaczenie.  Publiczny = wpuszcza kazdy numer.",
                  bg=BG2, fg=DIM, font=("Segoe UI", 8)).pack(anchor="w", padx=24, pady=(6, 0))
 
+        v_foto = tk.BooleanVar(value=m.get("zdjecie", True))
+        tk.Checkbutton(w, text="Scena z prawdziwego zdjecia wjazdu",
+                       variable=v_foto, bg=BG2, fg=FG, selectcolor=BG3,
+                       activebackground=BG2, activeforeground=FG,
+                       font=("Segoe UI", 9)).pack(anchor="w", padx=22, pady=(16, 0))
+        tk.Label(w, text="odznacz, aby wrocic do sceny rysowanej",
+                 bg=BG2, fg=DIM, font=("Segoe UI", 8)).pack(anchor="w", padx=44)
+
         tk.Label(w, text="Rodzaj przegrody", bg=BG2, fg=DIM,
                  font=("Segoe UI", 9)).pack(anchor="w", padx=24, pady=(14, 3))
         v_wyg = tk.StringVar(value=m.get("wyglad", "slupki"))
@@ -2074,6 +2234,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
                       "tryb": v_tryb.get(), "impuls_ms": imp, "czas_otwarcia": czas,
                       "opoznienie": opoz, "autozamykanie": v_auto.get(),
                       "wyglad": v_wyg.get(), "wyglad_wybrany": True,
+                      "zdjecie": v_foto.get(),
                       "tryb_sterowania": v_ster.get(), "tryb_pracy": v_pracy.get(),
                       "zalaczenie_s": max(1, min(60, int(v_zal.get() or 1)))})
             m.setdefault("numery", [])
