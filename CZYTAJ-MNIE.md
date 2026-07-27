@@ -1,7 +1,187 @@
-# ZAPORA-AWF v5.0
+# ZAPORA-AWF v5.4
 
 Akademia Wychowania Fizycznego Jozefa Pilsudskiego w Warszawie — Straz Akademicka.
 System kontroli wjazdu: zapora slupkowa ze slupkami chowanymi w jezdnie.
+
+## NOWE w v5.4 — panele nie zaslaniaja zapory
+
+### Chowaja sie same podczas ruchu
+
+W ustawieniach obiektu doszedl wybor **Panele na zdjeciu**:
+
+| Ustawienie | Dzialanie |
+|---|---|
+| **Chowaj podczas ruchu** (domyslne) | w spoczynku pelne panele, w trakcie przejazdu znikaja i zostaje sam waski pasek stanu u gory oraz postep u dolu |
+| **Zawsze widoczne** | panele caly czas |
+| **Zawsze schowane** | tylko pasek stanu, maksimum obrazu |
+
+Tlo jest przygotowywane w dwoch wersjach — z panelami i czyste — wiec
+przelaczanie nie kosztuje nic w trakcie animacji.
+
+### Kadr sam sie odsuwa
+
+Program liczy, gdzie na ekranie wypadnie prawa krawedz najdalszego slupka,
+i porownuje ja z krawedzia panelu. Jesli byloby za ciasno, **oddala kadr**,
+az wszystko sie zmiesci. Sprawdzone na trzech rozmiarach okna:
+
+| okno | slupki siegaja do | panel zaczyna sie na | wynik |
+|---|---|---|---|
+| 1360x880 | x=937 | x=991 | wolne |
+| 1100x700 | x=748 | x=798 | wolne |
+| 900x560 | x=676 | x=724 | wolne |
+
+### Male okno — inny uklad
+
+Ponizej 940x520 panel boczny znika sam. Zostaje pasek stanu w prawym gornym rogu
+i trzy przyciski na dole, na calej szerokosci. Nic nie nachodzi na zapore.
+
+### Uwaga o poprzednich wersjach
+
+Przy przepisywaniu ukladu paneli plik rozjechal sie na dwie niespojne wersje —
+czesc kodu uzywala starych nazw, czesc nowych. Caly ten fragment zostal napisany
+od nowa, spojnie. Jesli cos w podgladzie zachowywalo sie dziwnie w 5.3, to stad.
+
+# ZAPORA-AWF v5.4
+
+Akademia Wychowania Fizycznego Jozefa Pilsudskiego w Warszawie — Straz Akademicka.
+
+## NOWE w v5.4 — barwy i herb uczelni
+
+Kolory zostaly pobrane **wprost z przyslanego herbu AWF**, a nie dobrane na oko:
+
+| Barwa | Kod | Udzial w herbie |
+|---|---|---|
+| Zielen AWF | `#006040` | 51% |
+| Zloto AWF | `#b89058` | 9% |
+
+Cala aplikacja jest teraz na tych dwoch barwach. Poprzedni niebieski akcent
+zniknal calkowicie — sprawdzone: **zero pikseli w starym kolorze**.
+
+- **Motyw ciemny** — ciemna zielen zamiast granatu, akcent w jasnej zieleni,
+  wyroznienia w zlocie
+- **Motyw jasny** — biel i jasna zielen, akcent w pelnej zieleni AWF
+- **Scena** — niebo, jezdnia i cienie przesuniete w strone zieleni,
+  zeby zdjecie i interfejs tworzyly calosc
+
+Kontrast tekstu sprawdzony wedlug WCAG w obu motywach — wszystkie wartosci
+powyzej progu czytelnosci.
+
+### Herb jako ikona
+
+Ikona programu, ikona w pasku zadan i logo na ekranie logowania to teraz
+**herb AWF** — ten sam plik, przeskalowany do siedmiu rozmiarow od 16 do 256 px.
+
+### Ikonki adresu, telefonu i poczty
+
+Dolaczone ikonki sa przemalowywane do odcienia pasujacego do motywu:
+jasna zielen na ciemnym tle, pelna zielen AWF na jasnym, zloto do wyroznien.
+
+### Wyrazniejsze przyciski
+
+Przyciski dostaly obrys i pogrubiona czcionke. Glowny przycisk jest w zieleni
+AWF, przycisk akcji w zlocie, pozostale z zielonym obrysem przy najechaniu.
+Przyciski na zdjeciu maja zlote obramowanie, zeby bylo je widac na kazdym tle.
+
+### Dopasowanie do okna
+
+Scena przelicza uklad **przy kazdej zmianie rozmiaru okna**. Sprawdzone:
+przy oknie 1000x640 skala wynosi 0.78, przy 1920x1040 rosnie do 1.75,
+a panele w obu przypadkach nie zaslaniaja slupkow.
+
+## NAPRAWIONE w v5.3 — wersja 5.2 miala powazna wade
+
+W paczce 5.2 zestaw plikow byl niezgodny z programem: uklad opisywal jedne
+nazwy, a na dysku lezaly inne. Wczytanie zdjecia wywalalo sie po cichu
+i program wracal do sceny rysowanej. **Jesli instalowales 5.2, zdjecie nigdy
+sie nie pokazalo** — to nie byla Twoja wina.
+
+Materialy zostaly przebudowane od zera i sprawdzone: wczytanie konczy sie
+powodzeniem, a na zrzutach z dzialajacej aplikacji widac fotografie.
+
+## NOWE w v5.3 — panele nie zaslaniaja slupkow
+
+Panele przeniesione **na prawa strone**, slupki zajmuja lewa czesc okna.
+Strona nie jest przypadkowa: pierwszy slupek stoi tuz przy lewej krawedzi
+zdjecia, wiec panel po lewej zawsze by go zaslanial — kadru nie da sie
+przesunac dalej w lewo. Przy panelu po prawej wszystkie cztery mieszcza sie
+swobodnie.
+
+Program **sam dobiera przyblizenie i wykadrowanie** zdjecia tak, by czworka
+slupkow wypelnila wolne pole obok paneli, a nastepnie sprawdza i koryguje,
+gdyby ktorykolwiek mial wejsc pod panel.
+
+Sprawdzone na czterech rozmiarach okna — 1920x1080, 1360x880, 1100x700
+i 980x620. W kazdym przypadku: **zero kolizji paneli ze slupkami, zero slupkow
+poza kadrem**.
+
+### Rozmieszczenie
+
+| Miejsce | Zawartosc |
+|---|---|
+| lewy gorny rog | nazwa obiektu i zegar |
+| prawa kolumna, gora | stan zapory, kto wjezdza, numer, powod odmowy |
+| prawa kolumna, srodek | lista numerow uprawnionych — klikalna |
+| prawa kolumna, dol | przyciski SYMULUJ PRZEJAZD / OTWORZ / ZAMKNIJ |
+| niski pasek na dole | ustawienia przekaznika i pasek postepu |
+
+Na malym oknie (ponizej 900x520) panel boczny nie miescilby sie sensownie,
+wiec lista i przyciski schodza na szeroki pas na dole.
+
+## NOWE w v5.2 — plyty podstawy i plynniejsza animacja
+
+### Po schowaniu widac plyty, nie goly bruk
+
+Wczesniej zaklejalem cale slupki razem z podstawami, wiec po opuszczeniu
+wjazd wygladal, jakby zapory tam w ogole nie bylo. Teraz **kwadratowe plyty
+podstawy zostaja na tle** — zaklejany jest wylacznie korpus nad plyta.
+
+Po schowaniu widac dokladnie to, co w rzeczywistosci: cztery plyty
+z pokrywami rowno z bruk. Pomiar z gotowej sceny: plyty sa o 25-80 stopni
+jasnosci ciemniejsze od bruku obok, czyli wyraznie widoczne.
+
+Sprity slupkow zostaly przyciete tak, ze zawieraja **sam korpus bez plyty** —
+plyta nie jedzie razem ze slupkiem, tylko zostaje w ziemi.
+
+### Plynniejszy ruch
+
+Liczba poziomow wysuniecia podniesiona z 52 do **120**. Pomiar z dzialajacej
+aplikacji: podczas jednego cyklu program odwiedza 69 roznych poziomow
+i przerysowuje okolo 95 klatek na sekunde. Ruch jest ciagly, bez skokow.
+
+Kazdy poziom jest liczony raz i trzymany w pamieci podrecznej, wiec plynnosc
+nie kosztuje wydajnosci — druga i kolejne animacje ida z gotowych klatek.
+
+## NOWE w v5.1 — zdjecie na cale okno
+
+Podglad to teraz **fotografia Waszego wjazdu wypelniajaca cale okno**.
+Zdjecie skaluje sie do aktualnego rozmiaru okna — zarowno na maksymalizowanym
+monitorze, jak i na malym laptopie. Wspolrzedne slupkow sa zapisane w ukladzie
+zdjecia, wiec program przelicza je za kazdym razem pod biezacy rozmiar.
+
+### Rozmieszczenie
+
+| Miejsce | Zawartosc |
+|---|---|
+| lewy gorny rog | nazwa obiektu i zegar |
+| prawy gorny rog | stan zapory, kto wjezdza, numer, powod odmowy |
+| lewa kolumna | lista numerow uprawnionych ze stanem — **klikalna**, wybiera osobe |
+| dolny pasek | przyciski SYMULUJ PRZEJAZD / OTWORZ / ZAMKNIJ, ustawienia przekaznika i pasek postepu |
+
+Wszystkie panele sa **naprawde przezroczyste** — pomiar z dzialajacej aplikacji:
+panel ma jasnosc 72 przy zdjeciu obok 180, czyli przyciemnia, ale przepuszcza obraz.
+Tkinter nie potrafi przezroczystosci na plotnie, wiec panele sa wtapiane
+w fotografie przed wyswietleniem, przy kazdej zmianie rozmiaru okna.
+
+### Klikanie na zdjeciu
+
+Przyciski i lista osob dzialaja bezposrednio na fotografii — nie ma osobnych
+kontrolek pod spodem. Klikniecie w wiersz listy wybiera osobe, klikniecie
+w przycisk uruchamia akcje.
+
+### Powrot do widoku klasycznego
+
+W ustawieniach obiektu odznacz **„Scena z prawdziwego zdjecia wjazdu"**.
+Wroci rysowana scena, a pod nia tabela numerow i przyciski jak wczesniej.
 
 ## NOWE w v5.0 — scena z prawdziwego zdjecia wjazdu
 

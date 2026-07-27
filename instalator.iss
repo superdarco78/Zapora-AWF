@@ -1,10 +1,10 @@
 ; ============================================================
 ;  ZAPORA-AWF — skrypt instalatora (Inno Setup 6)
-;  Buduje: ZAPORA-AWF-Instalator-v5.0.exe
+;  Buduje: ZAPORA-AWF-Instalator-v5.4.exe
 ; ============================================================
 
 #define NazwaApp      "ZAPORA-AWF"
-#define WersjaApp     "5.0"
+#define WersjaApp     "5.4"
 #define ProducentApp  "Akademia Wychowania Fizycznego w Warszawie"
 #define StronaApp     "https://www.awf.edu.pl"
 #define PlikExe       "ZAPORA-AWF.exe"
@@ -19,7 +19,7 @@ AppVerName={#NazwaApp} {#WersjaApp}
 AppPublisher={#ProducentApp}
 AppPublisherURL={#StronaApp}
 AppSupportURL={#StronaApp}
-VersionInfoVersion=5.0.0.0
+VersionInfoVersion=5.4.0.0
 VersionInfoCompany={#ProducentApp}
 VersionInfoDescription=ZAPORA-AWF — kontrola wjazdu
 

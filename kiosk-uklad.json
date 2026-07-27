@@ -1,37 +1,45 @@
 {
-  "tlo": "kiosk-tlo.png",
-  "scena": [
-    1140,
-    460
+  "tlo": "kiosk-tlo.jpg",
+  "foto": [
+    1700,
+    1275
   ],
   "slupki": [
     {
-      "plik": "kiosk-slupek1.png",
-      "cx": 97,
-      "grunt": 179,
-      "wys": 106,
-      "szer": 42
+      "cx": 139,
+      "grunt": 259,
+      "szer": 45,
+      "korpus": "kiosk-korpus1.png",
+      "plyta": "kiosk-plyta1.png",
+      "wys_korpus": 110,
+      "wys_plyta": 16
     },
     {
-      "plik": "kiosk-slupek2.png",
-      "cx": 323,
-      "grunt": 201,
-      "wys": 131,
-      "szer": 51
+      "cx": 400,
+      "grunt": 284,
+      "szer": 54,
+      "korpus": "kiosk-korpus2.png",
+      "plyta": "kiosk-plyta2.png",
+      "wys_korpus": 136,
+      "wys_plyta": 20
     },
     {
-      "plik": "kiosk-slupek3.png",
-      "cx": 469,
-      "grunt": 227,
-      "wys": 143,
-      "szer": 55
+      "cx": 568,
+      "grunt": 314,
+      "szer": 58,
+      "korpus": "kiosk-korpus3.png",
+      "plyta": "kiosk-plyta3.png",
+      "wys_korpus": 148,
+      "wys_plyta": 22
     },
     {
-      "plik": "kiosk-slupek4.png",
-      "cx": 652,
-      "grunt": 264,
-      "wys": 185,
-      "szer": 63
+      "cx": 780,
+      "grunt": 357,
+      "szer": 66,
+      "korpus": "kiosk-korpus4.png",
+      "plyta": "kiosk-plyta4.png",
+      "wys_korpus": 190,
+      "wys_plyta": 28
     }
   ]
 }

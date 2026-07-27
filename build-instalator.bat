@@ -25,7 +25,7 @@ echo [1/4] Instalacja PyInstaller...
 python -m pip install --upgrade pip --quiet
 python -m pip install --upgrade pyinstaller pillow --quiet
 echo [2/4] Budowanie aplikacji...
-python -m PyInstaller --onedir --windowed --clean --noupx --name "ZAPORA-AWF" --icon ikona.ico --version-file wersja.txt --manifest manifest.xml --add-data "ikona.ico;." --add-data "logo.png;." --add-data "kiosk-tlo.png;." --add-data "kiosk-uklad.json;." --add-data "kiosk-slupek1.png;." --add-data "kiosk-slupek2.png;." --add-data "kiosk-slupek3.png;." --add-data "kiosk-slupek4.png;." zapora_awf.py
+python -m PyInstaller --onedir --windowed --clean --noupx --name "ZAPORA-AWF" --icon ikona.ico --version-file wersja.txt --manifest manifest.xml --add-data "ikona.ico;." --add-data "logo.png;." --add-data "ik-adres-jasny.png;." --add-data "ik-adres-ciemny.png;." --add-data "ik-adres-zloty.png;." --add-data "ik-telefon-jasny.png;." --add-data "ik-telefon-ciemny.png;." --add-data "ik-telefon-zloty.png;." --add-data "ik-mail-jasny.png;." --add-data "ik-mail-ciemny.png;." --add-data "ik-mail-zloty.png;." --add-data "kiosk-tlo.jpg;." --add-data "kiosk-uklad.json;." --add-data "kiosk-korpus1.png;." --add-data "kiosk-korpus2.png;." --add-data "kiosk-korpus3.png;." --add-data "kiosk-korpus4.png;." --add-data "kiosk-plyta1.png;." --add-data "kiosk-plyta2.png;." --add-data "kiosk-plyta3.png;." --add-data "kiosk-plyta4.png;." zapora_awf.py
 if errorlevel 1 ( echo [BLAD] Kompilacja nie powiodla sie. & pause & exit /b 1 )
 echo [3/4] Budowanie instalatora...
 %ISCC% instalator.iss
@@ -34,7 +34,7 @@ echo [4/4] Sprzatanie...
 rmdir /s /q build 2>nul
 del /q "ZAPORA-AWF.spec" 2>nul
 echo.
-echo   Instalator:  %CD%\ZAPORA-AWF-Instalator-v5.0.exe
+echo   Instalator:  %CD%\ZAPORA-AWF-Instalator-v5.4.exe
 echo   PIN fabryczny: 1234
 explorer "%CD%"
 pause

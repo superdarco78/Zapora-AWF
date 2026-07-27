@@ -18,46 +18,50 @@ from datetime import datetime, timedelta
 from tkinter import filedialog, messagebox, ttk
 
 APP = "ZAPORA-AWF"
-VER = "5.0"
+VER = "5.4"
 DATA_WYD = "27.07.2026"
 
 # paleta
+# Barwy uczelni: zielen #006040 i zloto #b89058 z herbu AWF.
+AWF_ZIELEN = "#006040"
+AWF_ZLOTO = "#b89058"
+
 MOTYWY = {
     "ciemny": {
-        "BG": "#0e1217", "BG2": "#161c24", "BG3": "#212a35",
-        "FG": "#e8eef6", "DIM": "#7d8b9c", "ACC": "#3b8ff5",
-        "OK": "#37c76a", "WARN": "#e8a33d",
+        "BG": "#0b1512", "BG2": "#13201b", "BG3": "#1d2f27",
+        "FG": "#eaf3ee", "DIM": "#8ba79a", "ACC": "#1ea972",
+        "OK": "#2fbe84", "WARN": AWF_ZLOTO,
         "scena": {
-            "niebo1": "#0a1220", "niebo2": "#1d2f4a", "horyzont": "#3a3550",
-            "jezdnia1": "#252a31", "jezdnia2": "#181c22", "krawedz": "#39424e",
-            "krawez": "#333a44", "pasy": "#4a5460", "plot": "#121820",
-            "slup_latarni": "#141a22", "latarnia": True,
-            "cien": "#0e1218", "plyta": "#333a44", "plyta2": "#262c34",
-            "stal1": "#59636f", "stal2": "#eef3f8", "stal_lewa": "#7a8794",
-            "rysy": "#8d99a6", "glowica": "#181d24", "glowica2": "#2b323b",
-            "tlo_hud": "#0d141d", "ramka_hud": "#243040", "alarm": "#e05a5f",
+            "niebo1": "#08130f", "niebo2": "#123326", "horyzont": "#2b3f34",
+            "jezdnia1": "#242b28", "jezdnia2": "#171d1a", "krawedz": "#35473e",
+            "krawez": "#2e3d36", "pasy": "#4c5f55", "plot": "#101a16",
+            "slup_latarni": "#14201b", "latarnia": True,
+            "cien": "#0b1210", "plyta": "#2e3d36", "plyta2": "#22302a",
+            "stal1": "#5b6a63", "stal2": "#eef3f0", "stal_lewa": "#7d8d85",
+            "rysy": "#8d9d95", "glowica": "#18231e", "glowica2": "#2a3a32",
+            "tlo_hud": "#0c1815", "ramka_hud": "#26382f", "alarm": "#e06a5f",
         },
     },
     "jasny": {
-        "BG": "#f2f5f9", "BG2": "#ffffff", "BG3": "#e4e9f0",
-        "FG": "#18212c", "DIM": "#5b6a7d", "ACC": "#1657b8",
-        "OK": "#127a3c", "WARN": "#96610d",
+        "BG": "#f1f5f2", "BG2": "#ffffff", "BG3": "#e2ece6",
+        "FG": "#132019", "DIM": "#546b60", "ACC": AWF_ZIELEN,
+        "OK": "#0c7a52", "WARN": "#8a6520",
         "scena": {
-            "niebo1": "#8cb8e4", "niebo2": "#cfe3f5", "horyzont": "#eaf1f8",
-            "jezdnia1": "#9ba4ae", "jezdnia2": "#7f8892", "krawedz": "#6d7681",
-            "krawez": "#b6bec7", "pasy": "#eef2f6", "plot": "#a9b4c0",
-            "slup_latarni": "#8c97a3", "latarnia": False,
-            "cien": "#6d7883", "plyta": "#77818c", "plyta2": "#5d6771",
-            "stal1": "#8e99a5", "stal2": "#ffffff", "stal_lewa": "#b3bcc6",
-            "rysy": "#c3cbd4", "glowica": "#3a424c", "glowica2": "#59636f",
-            "tlo_hud": "#ffffff", "ramka_hud": "#c9d2dc", "alarm": "#bf2a30",
+            "niebo1": "#8fbfa8", "niebo2": "#cfe6da", "horyzont": "#eaf3ee",
+            "jezdnia1": "#9ba9a2", "jezdnia2": "#7f8d86", "krawedz": "#6d7b74",
+            "krawez": "#b6c4bc", "pasy": "#eef4f0", "plot": "#a9bcb1",
+            "slup_latarni": "#8c9a93", "latarnia": False,
+            "cien": "#6d7c75", "plyta": "#77857e", "plyta2": "#5d6b64",
+            "stal1": "#8e9c95", "stal2": "#ffffff", "stal_lewa": "#b3c1ba",
+            "rysy": "#c3d1ca", "glowica": "#3a4a42", "glowica2": "#59675f",
+            "tlo_hud": "#ffffff", "ramka_hud": "#c9d8cf", "alarm": "#a8322a",
         },
     },
 }
 
-BG, BG2, BG3 = "#0e1217", "#161c24", "#212a35"
-FG, DIM, ACC = "#e8eef6", "#7d8b9c", "#3b8ff5"
-OK, WARN = "#37c76a", "#e8a33d"
+BG, BG2, BG3 = "#0b1512", "#13201b", "#1d2f27"
+FG, DIM, ACC = "#eaf3ee", "#8ba79a", "#1ea972"
+OK, WARN = "#2fbe84", "#b89058"
 SC = MOTYWY["ciemny"]["scena"]
 
 
@@ -185,44 +189,52 @@ def sprawdz_dostep(n, teraz=None, modul=None):
     return True, "uprawniony"
 
 
-def wczytaj_foto():
-    """Material zdjeciowy: prawdziwy wjazd + slupki wyciete z tego samego zdjecia.
+def cien_styku(szer, wys, krycie):
+    """Miekki cien przy podstawie slupka — przyciemnia bruk, nie zakrywa go."""
+    from PIL import Image as _Img, ImageDraw as _Draw, ImageFilter as _F
+    szer = max(4, szer); wys = max(4, wys)
+    m = 6
+    obr = _Img.new("L", (szer + m * 2, wys + m * 2), 0)
+    d = _Draw.Draw(obr)
+    warstw = 6
+    for i in range(warstw, 0, -1):
+        t = i / float(warstw)
+        d.ellipse([m + szer * (1 - t) / 2, m + wys * (1 - t) / 2,
+                   m + szer - szer * (1 - t) / 2, m + wys - wys * (1 - t) / 2],
+                  fill=int(krycie * (1.0 - t) ** 0.7 + krycie * 0.18))
+    obr = obr.filter(_F.GaussianBlur(max(1.5, szer * 0.06)))
+    cien = _Img.new("RGBA", obr.size, (12, 14, 16, 0))
+    cien.putalpha(obr)
+    return cien
 
-    Panele sterowania sa wtapiane w zdjecie z prawdziwa przezroczystoscia,
-    bo tkinter sam nie potrafi przezroczystosci na plotnie.
+
+def wczytaj_foto():
+    """Zdjecie wjazdu w wysokiej rozdzielczosci + slupki wyciete z tego samego pliku.
+
+    Wspolrzedne sa w ukladzie zdjecia — scena przelicza je pod aktualny
+    rozmiar okna, wiec widok wypelnia cale okno niezaleznie od rozdzielczosci.
     """
     try:
-        from PIL import Image as _Img, ImageDraw as _Draw
+        from PIL import Image as _Img
         uk = zasob("kiosk-uklad.json")
-        tl = zasob("kiosk-tlo.png")
+        tl = zasob("kiosk-tlo.jpg")
         if not uk or not tl:
             return None
         with open(uk, "r", encoding="utf-8") as f:
             dane = json.load(f)
-        tlo = _Img.open(tl).convert("RGB")
-        W, H = tlo.size
-
-        # --- przezroczyste panele wtopione w zdjecie ---
-        nak = _Img.new("RGBA", (W, H), (0, 0, 0, 0))
-        d = _Draw.Draw(nak)
-        d.rounded_rectangle([16, 16, 322, 96], radius=12, fill=(8, 14, 22, 155))
-        d.rounded_rectangle([W - 348, 16, W - 16, 118], radius=12, fill=(8, 14, 22, 155))
-        d.rounded_rectangle([16, H - 74, 470, H - 16], radius=12, fill=(8, 14, 22, 150))
-        # trzy przyciski w dolnym pasku
-        for x1, x2 in PRZYCISKI_X:
-            d.rounded_rectangle([x1, H - 64, x2, H - 26], radius=9,
-                                fill=(255, 255, 255, 34), outline=(255, 255, 255, 90))
-        dane["_tlo"] = _Img.alpha_composite(tlo.convert("RGBA"), nak).convert("RGB")
-
+        dane["_tlo"] = _Img.open(tl).convert("RGB")
         for sl in dane["slupki"]:
-            sc = zasob(sl["plik"])
-            if not sc:
+            kp = zasob(sl["korpus"]); pl = zasob(sl["plyta"])
+            if not kp or not pl:
                 return None
-            sl["_obraz"] = _Img.open(sc).convert("RGBA")
+            sl["_korpus"] = _Img.open(kp).convert("RGBA")
+            sl["_plyta"] = _Img.open(pl).convert("RGBA")
         return dane
     except Exception:
         return None
 
+
+KLATKI = 120          # poziomow wysuniecia slupka — plynnosc animacji
 
 PRZYCISKI_X = [(30, 168), (180, 288), (300, 456)]
 PRZYCISKI_OPIS = ["SYMULUJ PRZEJAZD", "OTWORZ", "ZAMKNIJ"]
@@ -303,6 +315,7 @@ def wczytaj():
                     n.setdefault("wazny_do", "")
             d.setdefault("pin", hasz_pin("1234"))
             d.setdefault("motyw", "ciemny")
+            d.setdefault("panele", "auto")
             d.setdefault("marka", {"nazwa": "Straz Akademicka AWF",
                                    "podtytul": "Zapora slupkowa — kontrola wjazdu"})
             return d
@@ -320,7 +333,7 @@ def wczytaj():
              "aktywny": True, "dni": ["pn", "wt", "sr", "cz", "pt"],
              "godz_od": "06:00", "godz_do": "18:00", "wazny_do": ""},
         ]
-        return {"historia": [], "pin": hasz_pin("1234"), "moduly": [m], "motyw": "ciemny",
+        return {"historia": [], "pin": hasz_pin("1234"), "moduly": [m], "motyw": "ciemny", "panele": "auto",
                 "marka": {"nazwa": "Straz Akademicka AWF",
                           "podtytul": "Zapora slupkowa — kontrola wjazdu"}}
 
@@ -364,7 +377,13 @@ class Scena(tk.Canvas):
         self.odliczanie = 0.0
         self.foto = None            # material zdjeciowy, gdy tryb zdjeciowy wlaczony
         self.nazwa_obiektu = "ZAPORA"
+        self.lista_osob = []
+        self.wybrany_idx = 0
         self.on_przycisk = None
+        self.on_wybor = None
+        self._kiosk = None
+        self.pokaz_panele = "auto"
+        self.panele_widoczne = True
         self.bind("<Button-1>", self.klik_foto)
         self._cache_foto = {}
         self._tk_obrazy = []
@@ -523,46 +542,153 @@ class Scena(tk.Canvas):
         # --- HUD ---
         self.hud(W)
 
-    def rysuj_foto(self, p, mig):
-        """Scena z prawdziwego zdjecia wjazdu.
+    def uklad_paneli(self, W, H):
+        """Rozmieszczenie paneli. Panel boczny zawsze po prawej — pierwszy slupek
+        stoi tuz przy lewej krawedzi zdjecia, wiec z lewej zawsze by go zaslanial.
+        Na malym oknie panel boczny znika, zostaje pasek na dole."""
+        m = 16
+        boczny = W >= 940 and H >= 520
+        gora_lewo = (m, m, m + 300, m + 84)
+        if boczny:
+            szer = int(min(370, max(260, W * 0.26)))
+            prawy = (W - m - szer, m, W - m, H - m)
+            stan = (prawy[0] + 10, prawy[1] + 10, prawy[2] - 10, prawy[1] + 116)
+            przyciski = []
+            by = prawy[3] - 14
+            for _ in range(3):
+                przyciski.append((prawy[0] + 14, by - 38, prawy[2] - 14, by - 4))
+                by -= 44
+            przyciski.reverse()
+            lista = (prawy[0] + 6, stan[3] + 10, prawy[2] - 6, przyciski[0][1] - 12)
+            dol = (m, H - m - 30, prawy[0] - 14, H - m)
+        else:
+            prawy = None
+            stan = (W - m - 300, m, W - m, m + 92)
+            szer_b = int((W - 2 * m - 28) / 3)
+            przyciski = [(m + i * (szer_b + 12), H - m - 42,
+                          m + i * (szer_b + 12) + szer_b, H - m - 6) for i in range(3)]
+            lista = None
+            dol = (m, H - m - 76, W - m, H - m - 48)
+        return {"boczny": boczny, "gora_lewo": gora_lewo, "prawy": prawy,
+                "stan": stan, "lista": lista, "przyciski": przyciski, "dol": dol}
 
-        Kazda klatka to ten sam wycinek zdjecia, tylko krotszy — zadne piksele
-        nie sa dorysowywane, wszystkie pochodza z oryginalu.
-        """
-        from PIL import ImageTk
-        self._tk_obrazy = []
+    def przelicz_kiosk(self, W, H):
+        """Kadruje zdjecie pod rozmiar okna tak, by zadny slupek nie wszedl
+        pod panel, i przygotowuje dwa tla: z panelami i czyste."""
+        from PIL import Image as _Img, ImageDraw as _Draw, ImageTk
         f = self.foto
-        W, H = f["_tlo"].size
+        fw, fh = f["_tlo"].size
+        prop = W / float(H)
+        LP = self.uklad_paneli(W, H)
 
-        if "tlo" not in self._cache_foto:
-            self._cache_foto["tlo"] = ImageTk.PhotoImage(f["_tlo"])
-        self._tk_obrazy.append(self._cache_foto["tlo"])
-        self.create_image(0, 0, image=self._cache_foto["tlo"], anchor="nw")
+        wolne_od = 40
+        wolne_do = (LP["prawy"][0] - 34) if LP["boczny"] else (W - 40)
+        szer_wolna = max(200, wolne_do - wolne_od)
+        cx_min = min(sl["cx"] - sl["szer"] * 0.75 for sl in f["slupki"])
+        cx_max = max(sl["cx"] + sl["szer"] * 0.75 for sl in f["slupki"])
+        rozp = max(60, cx_max - cx_min)
 
-        # slupki — widoczna zostaje gorna czesc, reszta chowa sie w bruku
-        krok = max(0, min(48, int(round((1.0 - p) * 48))))
-        for i, sl in enumerate(f["slupki"]):
-            widoczne = int(sl["wys"] * krok / 48.0)
+        sk = szer_wolna / float(rozp)
+        kw = int(W / sk)
+        kh = int(kw / prop)
+        if kw > fw or kh > fh:
+            kw = min(fw, int(fh * prop))
+            kh = int(kw / prop)
+            sk = W / float(kw)
+        kx = max(0, min(int(cx_min - wolne_od / sk), fw - kw))
+        srodek_y = sum(sl["grunt"] for sl in f["slupki"]) / len(f["slupki"])
+        gora_min = min(sl["grunt"] - sl["wys_korpus"] for sl in f["slupki"])
+        ky = int(min(gora_min - kh * 0.16, srodek_y - kh * 0.52))
+        ky = max(0, min(ky, fh - kh))
+
+        kadr = f["_tlo"].crop((kx, ky, kx + kw, ky + kh)).resize((W, H), _Img.LANCZOS)
+        nak = _Img.new("RGBA", (W, H), (0, 0, 0, 0))
+        d = _Draw.Draw(nak)
+        pas = (8, 14, 22, 168)
+        d.rounded_rectangle(list(LP["gora_lewo"]), radius=13, fill=pas)
+        d.rounded_rectangle(list(LP["dol"]), radius=13, fill=(8, 14, 22, 140))
+        if LP["boczny"]:
+            d.rounded_rectangle(list(LP["prawy"]), radius=14, fill=pas)
+        else:
+            d.rounded_rectangle(list(LP["stan"]), radius=13, fill=pas)
+        barwy = [(30, 150, 105, 210), (255, 255, 255, 34), (255, 255, 255, 34)]
+        obrysy = [(46, 190, 140, 240), (255, 255, 255, 105), (255, 255, 255, 105)]
+        for (x1, y1, x2, y2), wyp, ob in zip(LP["przyciski"], barwy, obrysy):
+            d.rounded_rectangle([x1, y1, x2, y2], radius=10, fill=wyp, outline=ob, width=2)
+        gotowe = _Img.alpha_composite(kadr.convert("RGBA"), nak).convert("RGB")
+
+        self._kiosk = {"W": W, "H": H, "sk": sk, "kx": kx, "ky": ky, "uklad": LP,
+                       "tk": ImageTk.PhotoImage(gotowe),
+                       "tk_czyste": ImageTk.PhotoImage(kadr)}
+        self._cache_foto = {}
+
+    def rysuj_foto(self, p, mig):
+        """Pelnoekranowa scena z prawdziwego zdjecia wjazdu."""
+        from PIL import Image as _Img, ImageTk
+        W = max(self.winfo_width(), 700)
+        H = max(self.winfo_height(), 400)
+        if getattr(self, "_kiosk", None) is None or \
+                self._kiosk["W"] != W or self._kiosk["H"] != H:
+            self.przelicz_kiosk(W, H)
+        k = self._kiosk
+
+        widok = getattr(self, "pokaz_panele", "auto")
+        w_ruchu = self.faza != "spoczynek"
+        self.panele_widoczne = (widok == "zawsze" or (widok == "auto" and not w_ruchu))
+        obraz = k["tk"] if self.panele_widoczne else k["tk_czyste"]
+        self._tk_obrazy = [obraz]
+        self.create_image(0, 0, image=obraz, anchor="nw")
+
+        sk = k["sk"]
+        krok = max(0, min(52, int(round((1.0 - p) * 52))))
+        for i, sl in enumerate(self.foto["slupki"]):
+            ex = (sl["cx"] - k["kx"]) * sk
+            ey = (sl["grunt"] - k["ky"]) * sk
+            szer_e = max(2, int(sl["szer"] * sk))
+            udzial = krok / 52.0
+
+            if udzial > 0.02:
+                kl_c = ("cien", i, szer_e, int(udzial * 12))
+                if kl_c not in self._cache_foto:
+                    self._cache_foto[kl_c] = ImageTk.PhotoImage(
+                        cien_styku(int(szer_e * (2.1 + 0.9 * udzial)),
+                                   max(6, int(szer_e * (0.62 + 0.28 * udzial))),
+                                   int(96 * udzial)))
+                oc = self._cache_foto[kl_c]
+                self._tk_obrazy.append(oc)
+                self.create_image(ex, ey + max(1, int(sl["wys_plyta"] * sk * 0.30)),
+                                  image=oc, anchor="center")
+
+            kl_p = ("plyta", i, szer_e)
+            if kl_p not in self._cache_foto:
+                hp = max(2, int(sl["wys_plyta"] * sk))
+                self._cache_foto[kl_p] = ImageTk.PhotoImage(
+                    sl["_plyta"].resize((szer_e, hp), _Img.LANCZOS))
+            op = self._cache_foto[kl_p]
+            self._tk_obrazy.append(op)
+            self.create_image(ex, ey, image=op, anchor="s")
+
+            wys_e = max(2, int(sl["wys_korpus"] * sk))
+            widoczne = int(wys_e * krok / 52.0)
             if widoczne < 3:
                 continue
-            klucz = (i, krok)
-            if klucz not in self._cache_foto:
-                kadr = sl["_obraz"].crop((0, 0, sl["szer"], widoczne))
-                self._cache_foto[klucz] = ImageTk.PhotoImage(kadr)
-            obr = self._cache_foto[klucz]
-            self._tk_obrazy.append(obr)
-            self.create_image(sl["cx"], sl["grunt"] - widoczne, image=obr, anchor="n")
+            kl_k = (i, krok, szer_e)
+            if kl_k not in self._cache_foto:
+                pelny = sl["_korpus"].resize((szer_e, wys_e), _Img.LANCZOS)
+                self._cache_foto[kl_k] = ImageTk.PhotoImage(
+                    pelny.crop((0, 0, szer_e, widoczne)))
+            ok_ = self._cache_foto[kl_k]
+            self._tk_obrazy.append(ok_)
+            dol = ey - max(1, int(sl["wys_plyta"] * sk * 0.45))
+            self.create_image(ex, dol - widoczne, image=ok_, anchor="n")
 
-        self.hud_foto(W, H, p, mig)
+        if self.panele_widoczne:
+            self.hud_kiosk(k, p, mig)
+        else:
+            self.hud_minimalny(k, p)
 
-    def hud_foto(self, W, H, p, mig):
-        """Napisy i przyciski na wtopionych panelach."""
-        self.create_text(34, 42, text=self.nazwa_obiektu, anchor="w", fill="#f2f6fb",
-                         font=("Segoe UI Semibold", 12))
-        self.create_text(34, 68, text=datetime.now().strftime("%d.%m.%Y   %H:%M:%S"),
-                         anchor="w", fill="#b9c6d6", font=("Consolas", 10))
-
-        stan = {"spoczynek": ("SLUPKI PODNIESIONE", "#e8eef6"),
+    def _opis_stanu(self):
+        return {"spoczynek": ("SLUPKI PODNIESIONE", "#e8eef6"),
                 "jedzie": ("POJAZD PODJEZDZA", "#e8eef6"),
                 "dzwoni": ("POLACZENIE PRZYCHODZACE", "#f2b544"),
                 "otwieranie": ("OPUSZCZANIE SLUPKOW", "#4ade80"),
@@ -571,36 +697,104 @@ class Scena(tk.Canvas):
                 "czekanie": (f"ZAMKNIECIE ZA {self.odliczanie:.0f} s", "#f2b544"),
                 "zamykanie": ("PODNOSZENIE SLUPKOW", "#f2b544"),
                 "odmowa": ("DOSTEP ZABLOKOWANY", "#ff6b6b"),
-                "cofa": ("DOSTEP ZABLOKOWANY", "#ff6b6b")}.get(self.faza,
-                                                               ("GOTOWA", "#e8eef6"))
-        self.create_oval(W - 330, 38, W - 320, 48, fill=stan[1], outline="")
-        self.create_text(W - 308, 43, text=stan[0], anchor="w", fill=stan[1],
-                         font=("Segoe UI Semibold", 11))
-        if self.kto:
-            self.create_text(W - 330, 72, text=self.kto, anchor="w", fill="#f2f6fb",
-                             font=("Segoe UI", 11))
-            self.create_text(W - 330, 96, text=self.tel, anchor="w", fill="#b9c6d6",
-                             font=("Consolas", 10))
-        if self.powod:
-            self.create_text(W - 330, 96, text=self.powod, anchor="w", fill="#ff6b6b",
-                             font=("Segoe UI", 9))
+                "cofa": ("DOSTEP ZABLOKOWANY", "#ff6b6b")}.get(
+                    self.faza, ("GOTOWA", "#e8eef6"))
 
-        for (x1, x2), opis in zip(PRZYCISKI_X, PRZYCISKI_OPIS):
-            self.create_text((x1 + x2) / 2, H - 45, text=opis, fill="#f2f6fb",
-                             font=("Segoe UI Semibold", 9))
+    def hud_kiosk(self, k, p, mig):
+        LP = k["uklad"]
+        x1, y1, x2, y2 = LP["gora_lewo"]
+        self.create_text(x1 + 16, y1 + 28, text=self.nazwa_obiektu, anchor="w",
+                         fill="#f2f6fb", font=("Segoe UI Semibold", 12))
+        self.create_text(x1 + 16, y1 + 56, text=datetime.now().strftime("%d.%m.%Y   %H:%M:%S"),
+                         anchor="w", fill="#b9c6d6", font=("Consolas", 10))
+
+        opis, kolor = self._opis_stanu()
+        sx1, sy1, sx2, sy2 = LP["stan"]
+        self.create_oval(sx1 + 14, sy1 + 22, sx1 + 24, sy1 + 32, fill=kolor, outline="")
+        self.create_text(sx1 + 34, sy1 + 27, text=opis, anchor="w", fill=kolor,
+                         font=("Segoe UI Semibold", 10))
+        if self.kto:
+            self.create_text(sx1 + 14, sy1 + 58, text=self.kto, anchor="w",
+                             fill="#f2f6fb", font=("Segoe UI", 11))
+            self.create_text(sx1 + 14, sy1 + 82, text=self.tel, anchor="w",
+                             fill="#b9c6d6", font=("Consolas", 10))
+        if self.powod:
+            self.create_text(sx1 + 14, sy1 + 82, text=self.powod, anchor="w",
+                             fill="#ff6b6b", font=("Segoe UI", 9))
+
+        if LP["lista"]:
+            lx1, ly1, lx2, ly2 = LP["lista"]
+            self.create_text(lx1 + 14, ly1 + 16, text="NUMERY UPRAWNIONE", anchor="w",
+                             fill="#8fa3ba", font=("Segoe UI Semibold", 9))
+            y = ly1 + 46
+            for i, poz in enumerate(self.lista_osob):
+                if y > ly2 - 12:
+                    break
+                if i == self.wybrany_idx:
+                    self.create_rectangle(lx1 + 6, y - 15, lx2 - 6, y + 16,
+                                          fill="#1f6feb", outline="")
+                self.create_text(lx1 + 16, y, text=poz["imie"][:22], anchor="w",
+                                 fill="#ffffff" if i == self.wybrany_idx else "#e2e9f2",
+                                 font=("Segoe UI", 10))
+                self.create_text(lx2 - 16, y, text=poz["stan"], anchor="e",
+                                 fill="#ffffff" if i == self.wybrany_idx else poz["kolor"],
+                                 font=("Segoe UI", 9))
+                y += 33
+
+        for (bx1, by1, bx2, by2), tekst in zip(LP["przyciski"], PRZYCISKI_OPIS):
+            self.create_text((bx1 + bx2) / 2, (by1 + by2) / 2, text=tekst,
+                             fill="#f2f6fb", font=("Segoe UI Semibold", 10))
+
+        dx1, dy1, dx2, dy2 = LP["dol"]
+        self.create_text(dx1 + 16, (dy1 + dy2) / 2,
+                         text=f"przekaznik: {self.tryb}   ·   czas otwarcia "
+                              f"{self.czas_otwarcia} s   ·   "
+                              f"{'autozamykanie' if self.autozamykanie else 'bez autozamykania'}",
+                         anchor="w", fill="#9fb0c4", font=("Consolas", 9))
+        bw = min(240, (dx2 - dx1) * 0.4)
+        self.create_rectangle(dx2 - 16 - bw, (dy1 + dy2) / 2 - 4,
+                              dx2 - 16, (dy1 + dy2) / 2 + 4, fill="#16202c", outline="")
+        self.create_rectangle(dx2 - 16 - bw, (dy1 + dy2) / 2 - 4,
+                              dx2 - 16 - bw + bw * p, (dy1 + dy2) / 2 + 4,
+                              fill="#3b8ff5", outline="")
+
+    def hud_minimalny(self, k, p):
+        """Panele schowane — tylko waski pasek stanu u gory i postep u dolu."""
+        W, H = k["W"], k["H"]
+        opis, kolor = self._opis_stanu()
+        tekst = opis + (f"   ·   {self.kto}" if self.kto else "")
+        szer = 60 + len(tekst) * 8
+        x = W / 2 - szer / 2
+        self.create_rectangle(x, 12, x + szer, 46, fill="#0a1018", outline="")
+        self.create_oval(x + 14, 24, x + 24, 34, fill=kolor, outline="")
+        self.create_text(x + 34, 29, text=tekst, anchor="w", fill=kolor,
+                         font=("Segoe UI Semibold", 10))
+        if self.powod:
+            self.create_text(W / 2, 62, text=self.powod, fill="#ff6b6b",
+                             font=("Segoe UI", 9))
+        bw = 260
+        self.create_rectangle(W / 2 - bw / 2, H - 24, W / 2 + bw / 2, H - 16,
+                              fill="#16202c", outline="")
+        self.create_rectangle(W / 2 - bw / 2, H - 24, W / 2 - bw / 2 + bw * p, H - 16,
+                              fill="#3b8ff5", outline="")
 
     def klik_foto(self, zdarzenie):
-        """Obsluga przyciskow wtopionych w zdjecie."""
-        if not self.foto:
+        if not self.foto or not getattr(self, "_kiosk", None):
             return
-        H = self.foto["_tlo"].size[1]
-        if not (H - 64 <= zdarzenie.y <= H - 26):
+        if not getattr(self, "panele_widoczne", True):
             return
-        for i, (x1, x2) in enumerate(PRZYCISKI_X):
-            if x1 <= zdarzenie.x <= x2:
+        LP = self._kiosk["uklad"]
+        for i, (x1, y1, x2, y2) in enumerate(LP["przyciski"]):
+            if x1 <= zdarzenie.x <= x2 and y1 <= zdarzenie.y <= y2:
                 if self.on_przycisk:
                     self.on_przycisk(i)
                 return
+        if LP["lista"]:
+            lx1, ly1, lx2, ly2 = LP["lista"]
+            if lx1 <= zdarzenie.x <= lx2 and ly1 + 30 <= zdarzenie.y <= ly2:
+                idx = int((zdarzenie.y - (ly1 + 30)) // 33)
+                if 0 <= idx < len(self.lista_osob) and self.on_wybor:
+                    self.on_wybor(idx)
 
     def rysuj_slupki(self, px, GY, p, mig):
         """Slupki blokujace chowane w jezdnie.
@@ -623,7 +817,7 @@ class Scena(tk.Canvas):
             return mix(SC["stal1"], SC["stal2"], j ** 1.15)
 
         if mig:
-            kol_led = "#f2b544"
+            kol_led = "#f0c069"
         elif p > 0.9:
             kol_led = "#37c76a"
         else:
@@ -990,6 +1184,8 @@ class App(tk.Tk):
 
         self.d = wczytaj()
         self.foto_material = None
+        self._pelne_okno = None
+        self._ikony = []
         ustaw_motyw(self.d.get("motyw", "ciemny"))
         self.configure(bg=BG)
         self.mod_idx = 0
@@ -1026,13 +1222,18 @@ class App(tk.Tk):
         s.configure("TEntry", fieldbackground=BG3, foreground=FG, insertcolor=FG,
                     bordercolor=BG3, lightcolor=BG3, darkcolor=BG3)
         s.configure("TCombobox", fieldbackground=BG3, background=BG3, foreground=FG)
-        s.configure("TButton", background=BG3, foreground=FG, borderwidth=0,
-                    padding=(14, 8), font=("Segoe UI", 10))
-        s.map("TButton", background=[("active", "#2c3846")])
-        s.configure("Acc.TButton", background=ACC, foreground="#fff")
-        s.map("Acc.TButton", background=[("active", "#5aa4ff")])
-        s.configure("Ok.TButton", background=OK, foreground="#06210f")
-        s.map("Ok.TButton", background=[("active", "#4ce07f")])
+        s.configure("TButton", background=BG3, foreground=FG, borderwidth=1,
+                    relief="solid", bordercolor=mix(BG3, FG, 0.28),
+                    padding=(14, 8), font=("Segoe UI Semibold", 10))
+        s.map("TButton", background=[("active", mix(BG3, ACC, 0.25))],
+              bordercolor=[("active", ACC)])
+        s.configure("Acc.TButton", background=ACC, foreground="#ffffff",
+                    borderwidth=1, relief="solid", bordercolor=mix(ACC, "#ffffff", 0.35))
+        s.map("Acc.TButton", background=[("active", mix(ACC, "#ffffff", 0.18))])
+        s.configure("Ok.TButton", background=AWF_ZLOTO, foreground="#2a1d05",
+                    borderwidth=1, relief="solid",
+                    bordercolor=mix(AWF_ZLOTO, "#ffffff", 0.35))
+        s.map("Ok.TButton", background=[("active", mix(AWF_ZLOTO, "#ffffff", 0.2))])
         s.configure("Treeview", background=BG2, fieldbackground=BG2, foreground=FG,
                     borderwidth=0, rowheight=29)
         s.configure("Treeview.Heading", background=BG3, foreground=DIM,
@@ -1122,6 +1323,7 @@ class App(tk.Tk):
     def _buduj_podglad(self):
         f = self.f_podglad
         wyb = tk.Frame(f, bg=BG)
+        self.wyb_podgladu = wyb
         wyb.pack(fill="x", padx=20, pady=(0, 8))
         tk.Label(wyb, text="Obiekt:", bg=BG, fg=DIM,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 8))
@@ -1135,9 +1337,10 @@ class App(tk.Tk):
         self.lbl_sim.pack(side="left", padx=14)
 
         self.scena = Scena(f, on_event=self.zdarzenie)
-        self.scena.pack(fill="x", padx=20)
+        self.scena.pack(fill="both", expand=True, padx=0, pady=0)
 
         ster = tk.Frame(f, bg=BG)
+        self.ster_podgladu = ster
         ster.pack(fill="x", padx=20, pady=(14, 6))
         ttk.Button(ster, text="▶  SYMULUJ PRZEJAZD", style="Ok.TButton",
                    command=self.przejazd).pack(side="left")
@@ -1149,6 +1352,7 @@ class App(tk.Tk):
         self.lbl_ostatni.pack(side="right")
 
         dol = tk.Frame(f, bg=BG)
+        self.dol_podgladu = dol
         dol.pack(fill="both", expand=True, padx=20, pady=(6, 16))
 
         lewa = tk.Frame(dol, bg=BG)
@@ -1486,6 +1690,8 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         self.scena.vtyp_bramy = m.get("wyglad", "slupki")
         self.scena.nazwa_obiektu = m["nazwa"].upper()
         self.scena.on_przycisk = self.przycisk_sceny
+        self.scena.on_wybor = self.wybor_ze_sceny
+        self.scena.pokaz_panele = self.d.get("panele", "auto")
         if m.get("zdjecie", True):
             if self.foto_material is None:
                 self.foto_material = wczytaj_foto()
@@ -1507,6 +1713,37 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
             self.tv.insert("", "end", iid=str(i), tags=(tag,) if tag else (),
                            values=(n.get("imie", ""), n.get("tel", ""),
                                    self._opis_harm(n), stan, ile, ost))
+        # lista dla panelu na zdjeciu
+        osoby=[]
+        for n in m.get("numery", []):
+            ok, _ = sprawdz_dostep(n, modul=m)
+            if not n.get("aktywny", True):
+                st, kol = "ZABLOKOWANY", "#ff6b6b"
+            elif ok:
+                st, kol = "wpuszcza", "#3fd493"
+            else:
+                st, kol = "poza godz.", "#f2b544"
+            osoby.append({"imie": n.get("imie",""), "stan": st, "kolor": kol})
+        self.scena.lista_osob = osoby
+        try:
+            self.scena.wybrany_idx = int(self.tv.selection()[0]) if self.tv.selection() else 0
+        except Exception:
+            self.scena.wybrany_idx = 0
+        pelne = bool(m.get("zdjecie", True))
+        if pelne != getattr(self, "_pelne_okno", None):
+            self._pelne_okno = pelne
+            if pelne:
+                self.dol_podgladu.pack_forget()
+                self.ster_podgladu.pack_forget()
+                self.wyb_podgladu.pack_forget()
+                self.scena.configure(height=200)
+            else:
+                self.wyb_podgladu.pack(fill="x", padx=20, pady=(0, 8))
+                self.scena.configure(height=Scena.H)
+                self.ster_podgladu.pack(fill="x", padx=20, pady=(14, 6))
+                self.dol_podgladu.pack(fill="both", expand=True, padx=20, pady=(6, 16))
+            self.scena._kiosk = None
+
         h = self.d.get("historia", [])
         if h and hasattr(self, "lbl_ostatni"):
             o = max(h, key=lambda x: x.get("ts", ""))
@@ -1663,6 +1900,13 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         self.scena.przejazd(n.get("imie", "?"), n.get("tel", ""), ok, powod)
         self.zapisz_wjazd(n.get("imie", "?"), n.get("tel", ""),
                           "przejazd (telefon)" if ok else f"ODMOWA — {powod}")
+
+    def wybor_ze_sceny(self, idx):
+        try:
+            self.tv.selection_set(str(idx))
+            self.scena.wybrany_idx = idx
+        except Exception:
+            pass
 
     def przycisk_sceny(self, nr):
         """Klikniecie przycisku wtopionego w zdjecie."""
@@ -2196,6 +2440,18 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         tk.Label(w, text="CLIP = otwiera samo polaczenie.  Publiczny = wpuszcza kazdy numer.",
                  bg=BG2, fg=DIM, font=("Segoe UI", 8)).pack(anchor="w", padx=24, pady=(6, 0))
 
+        tk.Label(w, text="Panele na zdjeciu", bg=BG2, fg=DIM,
+                 font=("Segoe UI", 9)).pack(anchor="w", padx=24, pady=(16, 3))
+        v_pan = tk.StringVar(value=self.d.get("panele", "auto"))
+        pr = tk.Frame(w, bg=BG2)
+        pr.pack(anchor="w", padx=22)
+        for val, lab in [("auto", "Chowaj podczas ruchu"),
+                         ("zawsze", "Zawsze widoczne"),
+                         ("nigdy", "Zawsze schowane")]:
+            tk.Radiobutton(pr, text=lab, variable=v_pan, value=val, bg=BG2, fg=FG,
+                           selectcolor=BG3, activebackground=BG2, activeforeground=FG,
+                           font=("Segoe UI", 9)).pack(anchor="w")
+
         v_foto = tk.BooleanVar(value=m.get("zdjecie", True))
         tk.Checkbutton(w, text="Scena z prawdziwego zdjecia wjazdu",
                        variable=v_foto, bg=BG2, fg=FG, selectcolor=BG3,
@@ -2243,6 +2499,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
                 self.zdarzenie(f"dodano modul: {m['nazwa']}")
             else:
                 self.zdarzenie(f"zapisano modul: {m['nazwa']}")
+            self.d["panele"] = v_pan.get()
             zapisz(self.d)
             self.odswiez_moduly()
             w.destroy()
@@ -2305,9 +2562,21 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         w.protocol("WM_DELETE_WINDOW", lambda: (w.destroy(), self.destroy()))
         w.grab_set()
 
-        cv = tk.Canvas(w, width=64, height=64, bg=BG2, highlightthickness=0)
-        cv.pack(pady=(26, 8))
-        self.emblemat(cv, 64)
+        lg = zasob("logo.png")
+        self._logo_log = None
+        if lg:
+            try:
+                obr = tk.PhotoImage(file=lg)
+                while obr.height() > 96:
+                    obr = obr.subsample(2, 2)
+                self._logo_log = obr
+                tk.Label(w, image=obr, bg=BG2).pack(pady=(24, 8))
+            except Exception:
+                self._logo_log = None
+        if not self._logo_log:
+            cv = tk.Canvas(w, width=64, height=64, bg=BG2, highlightthickness=0)
+            cv.pack(pady=(26, 8))
+            self.emblemat(cv, 64)
         tk.Label(w, text=self.d["marka"]["nazwa"], bg=BG2, fg=FG,
                  font=("Segoe UI Semibold", 13)).pack()
         tk.Label(w, text="Podaj PIN dostepu", bg=BG2, fg=DIM,
@@ -2508,6 +2777,21 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         ttk.Button(w, text="Zamknij", command=w.destroy).pack(pady=(0, 20))
 
     # ---------------- O PROGRAMIE ----------------
+    def ikonka(self, nazwa):
+        """Ikonka AWF w odcieniu pasujacym do motywu."""
+        odc = "jasny" if self.d.get("motyw", "ciemny") == "ciemny" else "ciemny"
+        sc = zasob(f"ik-{nazwa}-{odc}.png")
+        if not sc:
+            return None
+        try:
+            obr = tk.PhotoImage(file=sc)
+            while obr.height() > 20:
+                obr = obr.subsample(2, 2)
+            self._ikony.append(obr)
+            return obr
+        except Exception:
+            return None
+
     def okno_o_programie(self):
         w = tk.Toplevel(self)
         w.title("O programie")

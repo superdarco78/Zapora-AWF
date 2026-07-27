@@ -1,44 +1,49 @@
-# Jak testowac bez czekania na GitHuba
+# Test na zywo — bez budowania instalatora
 
-Budowanie instalatora trwa 3-5 minut. Przy kazdej drobnej poprawce to za dlugo.
-Ponizej sposob, zeby zobaczyc zmiany **od razu**.
+## Najszybciej: uruchom.bat
 
-## Jednorazowa instalacja Pythona (5 minut, raz na zawsze)
+1. Rozpakuj paczke
+2. Kliknij dwa razy **`uruchom.bat`**
+3. Okno otwiera sie od razu, PIN **1234**
 
-1. Wejdz na **python.org/downloads**
+Plik sam sprawdzi, czy jest Python i czy jest biblioteka Pillow —
+jesli brakuje Pillow, doinstaluje ja jednorazowo.
+
+Poprawiasz, zamykasz okno, klikasz `uruchom.bat` ponownie. Zadnego czekania.
+
+## Jednorazowa instalacja Pythona
+
+Jesli `uruchom.bat` napisze, ze nie znalazl Pythona:
+
+1. **python.org/downloads**
 2. Zolty przycisk **Download Python**
-3. Uruchom instalator i **na pierwszym ekranie, na dole, zaznacz
-   „Add python.exe to PATH"** — to jest najwazniejsze
+3. **Na pierwszym ekranie instalatora, na dole, zaznacz
+   „Add python.exe to PATH"** — to najwazniejsze
 4. **Install Now** -> **Close**
 
-## Test aplikacji — 2 sekundy
+Potem `uruchom.bat` juz zadziala.
 
-Klikasz dwa razy na plik **`zapora_awf.py`** w rozpakowanym folderze.
-Okno otwiera sie natychmiast. Zamykasz, poprawiasz, otwierasz ponownie.
+## Co sprawdzic w tej wersji
 
-Zadnego budowania, zadnego czekania.
-
-Jesli plik otwiera sie w Notatniku zamiast sie uruchomic:
-prawy klik -> **Otworz za pomoca** -> **Python**.
+- **Podglad** — czy zdjecie wypelnia cale okno i czy panel po prawej
+  nie zaslania zadnego slupka
+- **Kliknij SYMULUJ PRZEJAZD** — czy panele znikaja na czas ruchu
+  i wracaja po zakonczeniu
+- **Zmien rozmiar okna** — czy kadr sam sie dopasowuje
+- **Ustawienia obiektu** (MODULY -> Edytuj) — trzy tryby paneli:
+  chowaj podczas ruchu / zawsze widoczne / zawsze schowane
+- **Tryb jasny** w prawym gornym rogu
+- **STEROWNIK** — Polacz, kod dostepu, tryb pracy, kopia danych
+- **HISTORIA I RAPORTY** — czy przejazd sie zapisal, czy raport sie otwiera
 
 ## Kiedy budowac instalator
 
-Dopiero gdy wersja jest gotowa do zainstalowania na komputerze dyzurki
-albo do pokazania komus. Do samego sprawdzania wygladu i klikania —
-uruchamiaj plik .py bezposrednio.
+Dopiero gdy wersja ma isc na komputer dyzurki albo do pokazania komus.
+Do samego klikania i ogladania wystarczy `uruchom.bat`.
 
-## Co testowac po kazdej zmianie
-
-- **Podglad** — kliknij SYMULUJ PRZEJAZD, obejrzyj pelny cykl
-- **Tryb jasny/ciemny** — przelacz i sprawdz czy wszystko czytelne
-- **Numery** — dodaj kogos z harmonogramem pn-pt 06:00-18:00 i sprawdz
-  kolumne STAN
-- **Historia** — czy przejazd sie zapisal, czy raport sie generuje
-- **O programie** — czy wersja sie zgadza
-
-## Gdzie leza dane podczas testow
+## Gdzie leza dane
 
 `%APPDATA%\ZAPORA-AWF` — wklej w pasek adresu Eksploratora.
 
-Chcesz zaczac od czystej bazy: skasuj stamtad `baza.json` i uruchom program
-ponownie. Utworzy nowa z przykladowymi numerami, PIN wroci do 1234.
+Chcesz zaczac od czystej bazy: skasuj stamtad `baza.json` i uruchom ponownie.
+Program utworzy nowa z przykladowymi numerami, PIN wroci do 1234.
