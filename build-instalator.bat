@@ -34,7 +34,7 @@ echo [4/4] Sprzatanie...
 rmdir /s /q build 2>nul
 del /q "ZAPORA-AWF.spec" 2>nul
 echo.
-echo   Instalator:  %CD%\ZAPORA-AWF-Instalator-v4.4.exe
+echo   Instalator:  %CD%\ZAPORA-AWF-Instalator-v4.8.exe
 echo   PIN fabryczny: 1234
 explorer "%CD%"
 pause

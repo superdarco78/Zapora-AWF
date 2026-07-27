@@ -18,13 +18,57 @@ from datetime import datetime, timedelta
 from tkinter import filedialog, messagebox, ttk
 
 APP = "ZAPORA-AWF"
-VER = "4.4"
+VER = "4.8"
 DATA_WYD = "27.07.2026"
 
 # paleta
+MOTYWY = {
+    "ciemny": {
+        "BG": "#0e1217", "BG2": "#161c24", "BG3": "#212a35",
+        "FG": "#e8eef6", "DIM": "#7d8b9c", "ACC": "#3b8ff5",
+        "OK": "#37c76a", "WARN": "#e8a33d",
+        "scena": {
+            "niebo1": "#0a1220", "niebo2": "#1d2f4a", "horyzont": "#3a3550",
+            "jezdnia1": "#252a31", "jezdnia2": "#181c22", "krawedz": "#39424e",
+            "krawez": "#333a44", "pasy": "#4a5460", "plot": "#121820",
+            "slup_latarni": "#141a22", "latarnia": True,
+            "cien": "#0e1218", "plyta": "#333a44", "plyta2": "#262c34",
+            "stal1": "#59636f", "stal2": "#eef3f8", "stal_lewa": "#7a8794",
+            "rysy": "#8d99a6", "glowica": "#181d24", "glowica2": "#2b323b",
+            "tlo_hud": "#0d141d", "ramka_hud": "#243040", "alarm": "#e05a5f",
+        },
+    },
+    "jasny": {
+        "BG": "#f2f5f9", "BG2": "#ffffff", "BG3": "#e4e9f0",
+        "FG": "#18212c", "DIM": "#5b6a7d", "ACC": "#1657b8",
+        "OK": "#127a3c", "WARN": "#96610d",
+        "scena": {
+            "niebo1": "#8cb8e4", "niebo2": "#cfe3f5", "horyzont": "#eaf1f8",
+            "jezdnia1": "#9ba4ae", "jezdnia2": "#7f8892", "krawedz": "#6d7681",
+            "krawez": "#b6bec7", "pasy": "#eef2f6", "plot": "#a9b4c0",
+            "slup_latarni": "#8c97a3", "latarnia": False,
+            "cien": "#6d7883", "plyta": "#77818c", "plyta2": "#5d6771",
+            "stal1": "#8e99a5", "stal2": "#ffffff", "stal_lewa": "#b3bcc6",
+            "rysy": "#c3cbd4", "glowica": "#3a424c", "glowica2": "#59636f",
+            "tlo_hud": "#ffffff", "ramka_hud": "#c9d2dc", "alarm": "#bf2a30",
+        },
+    },
+}
+
 BG, BG2, BG3 = "#0e1217", "#161c24", "#212a35"
 FG, DIM, ACC = "#e8eef6", "#7d8b9c", "#3b8ff5"
 OK, WARN = "#37c76a", "#e8a33d"
+SC = MOTYWY["ciemny"]["scena"]
+
+
+def ustaw_motyw(nazwa):
+    """Przestawia globalna palete kolorow."""
+    global BG, BG2, BG3, FG, DIM, ACC, OK, WARN, SC
+    m = MOTYWY.get(nazwa, MOTYWY["ciemny"])
+    BG, BG2, BG3 = m["BG"], m["BG2"], m["BG3"]
+    FG, DIM, ACC = m["FG"], m["DIM"], m["ACC"]
+    OK, WARN = m["OK"], m["WARN"]
+    SC = m["scena"]
 
 
 def kat_dir():
@@ -112,12 +156,15 @@ def nowy_modul():
     return {"nazwa": "Brama glowna", "sim": "", "typ": TYPY_MODULOW[0],
             "haslo": "1234", "tryb": "impuls", "impuls_ms": 500,
             "czas_otwarcia": 8, "autozamykanie": True, "opoznienie": 2,
-            "wyglad": "szlaban", "numery": []}
+            "wyglad": "slupki", "tryb_sterowania": "CLIP+SMS",
+            "tryb_pracy": "prywatny", "zalaczenie_s": 1, "numery": []}
 
 
-def sprawdz_dostep(n, teraz=None):
+def sprawdz_dostep(n, teraz=None, modul=None):
     """Czy ten numer ma teraz prawo otworzyc? Zwraca (tak/nie, powod)."""
     teraz = teraz or datetime.now()
+    if modul and modul.get("tryb_pracy") == "publiczny":
+        return True, "tryb publiczny — wpuszcza kazdy numer"
     if not n.get("aktywny", True):
         return False, "numer zablokowany recznie"
     wd = (n.get("wazny_do") or "").strip()
@@ -201,6 +248,10 @@ def wczytaj():
                 for k, v in nowy_modul().items():
                     if k != "numery":
                         m.setdefault(k, v)
+                # bazy z wersji <=4.5 mialy blednie ustawiony szlaban jako domyslny;
+                # poprawiamy tylko wtedy, gdy uzytkownik nie wybral rodzaju sam
+                if not m.get("wyglad_wybrany"):
+                    m["wyglad"] = "slupki"
                 for n in m.get("numery", []):
                     n.setdefault("aktywny", True)
                     n.setdefault("dni", list(DNI))
@@ -208,6 +259,7 @@ def wczytaj():
                     n.setdefault("godz_do", "23:59")
                     n.setdefault("wazny_do", "")
             d.setdefault("pin", hasz_pin("1234"))
+            d.setdefault("motyw", "ciemny")
             d.setdefault("marka", {"nazwa": "Straz Akademicka AWF",
                                    "podtytul": "Zapora slupkowa — kontrola wjazdu"})
             return d
@@ -225,7 +277,7 @@ def wczytaj():
              "aktywny": True, "dni": ["pn", "wt", "sr", "cz", "pt"],
              "godz_od": "06:00", "godz_do": "18:00", "wazny_do": ""},
         ]
-        return {"historia": [], "pin": hasz_pin("1234"), "moduly": [m],
+        return {"historia": [], "pin": hasz_pin("1234"), "moduly": [m], "motyw": "ciemny",
                 "marka": {"nazwa": "Straz Akademicka AWF",
                           "podtytul": "Zapora slupkowa — kontrola wjazdu"}}
 
@@ -249,7 +301,7 @@ class Scena(tk.Canvas):
     KAT_MAX = 87           # kat otwarcia w stopniach
 
     def __init__(self, master, on_event=None):
-        super().__init__(master, bg="#0a0e14", height=self.H,
+        super().__init__(master, bg=SC["niebo1"], height=self.H,
                          highlightthickness=0, bd=0)
         self.on_event = on_event or (lambda t: None)
         self.postep = 0.0          # 0 = zamkniety, 1 = otwarty
@@ -296,29 +348,34 @@ class Scena(tk.Canvas):
         rusza = self.faza in ("otwieranie", "zamykanie")
         mig = rusza and (self.tik // 12) % 2 == 0
 
-        # --- niebo o zmierzchu ---
-        self._gradient(0, 0, W, GY - 60, "#0a1220", "#1d2f4a", 40)
-        self._gradient(0, GY - 60, W, GY, "#1d2f4a", "#3a3550", 16)
-        # lampy uliczne w tle
+        # --- niebo ---
+        self._gradient(0, 0, W, GY - 60, SC["niebo1"], SC["niebo2"], 40)
+        self._gradient(0, GY - 60, W, GY, SC["niebo2"], SC["horyzont"], 16)
+        # latarnie
         for lx in (120, W - 160):
-            self.create_line(lx, GY, lx, GY - 190, fill="#141a22", width=5)
-            self.create_line(lx, GY - 190, lx + 34, GY - 196, fill="#141a22", width=4)
-            self._poswiata(lx + 36, GY - 194, 46, "#e8a33d", 8)
-        # plot / krzaki w tle
+            self.create_line(lx, GY, lx, GY - 190, fill=SC["slup_latarni"], width=5)
+            self.create_line(lx, GY - 190, lx + 34, GY - 196,
+                             fill=SC["slup_latarni"], width=4)
+            if SC["latarnia"]:
+                self._poswiata(lx + 36, GY - 194, 46, "#e8a33d", 8)
+            else:
+                self.create_oval(lx + 26, GY - 200, lx + 46, GY - 188,
+                                 fill="#d8dee6", outline=SC["slup_latarni"])
+        # plot w tle
         for bx in range(0, W, 46):
             self.create_rectangle(bx, GY - 34, bx + 34, GY - 4,
-                                  fill="#121820", outline="")
+                                  fill=SC["plot"], outline="")
 
         # --- jezdnia ---
-        self._gradient(0, GY, W, self.H, "#252a31", "#181c22", 12)
-        self.create_line(0, GY, W, GY, fill="#39424e", width=2)
+        self._gradient(0, GY, W, self.H, SC["jezdnia1"], SC["jezdnia2"], 12)
+        self.create_line(0, GY, W, GY, fill=SC["krawedz"], width=2)
         for x in range(-30, W, 78):
             self.create_rectangle(x, GY + 46, x + 40, GY + 52,
-                                  fill="#4a5460", outline="")
-        # krawezniki
-        self.create_rectangle(0, GY - 6, W, GY, fill="#333a44", outline="")
+                                  fill=SC["pasy"], outline="")
+        self.create_rectangle(0, GY - 6, W, GY, fill=SC["krawez"], outline="")
 
         px = self.PX
+        p = self.postep
         kat = math.radians(self.postep * self.KAT_MAX)
 
         # --- wariant: slupki chowane w jezdnie ---
@@ -412,70 +469,47 @@ class Scena(tk.Canvas):
         self.hud(W)
 
     def rysuj_slupki(self, px, GY, p, mig):
-        """Slupki blokujace chowane w jezdnie — typ przemyslowy ze stali szczotkowanej.
+        """Slupki blokujace chowane w jezdnie.
 
-        p = 0  -> wysuniete (przejazd zamkniety)
-        p = 1  -> schowane w jezdni (przejazd wolny)
+        Kolejnosc rysowania jest istotna: korpusy ida PRZED jezdnia, a jezdnia
+        jest dorysowywana na nich. Dzieki temu slupek naprawde znika w gruncie,
+        zamiast nachodzic na nawierzchnie w koncowej fazie chowania.
         """
-        WYS = 116         # wysokosc nad jezdnia
-        SZER = 26         # srednica korpusu
+        WYS = 116
+        SZER = 26
         pozycje = [px - 108, px, px + 108]
         widoczne = WYS * (1.0 - p)
         pasm = 13
+        W = max(self.winfo_width(), 900)
 
-        def slup_kolor(t):
-            """Cieniowanie walca: odblask lekko na lewo od srodka."""
-            j = 1.0 - abs(t - 0.34) / 0.66
-            j = max(0.0, j)
+        def stal(t):
+            j = max(0.0, 1.0 - abs(t - 0.34) / 0.66)
             if t < 0.34:
-                return mix("#7a8794", "#eef3f8", j ** 0.9)
-            return mix("#59636f", "#eef3f8", j ** 1.15)
+                return mix(SC["stal_lewa"], SC["stal2"], j ** 0.9)
+            return mix(SC["stal1"], SC["stal2"], j ** 1.15)
 
-        for sx in pozycje:
-            # --- plyta bazowa wpuszczona w nawierzchnie ---
-            self.create_oval(sx - SZER / 2 - 17, GY - 7, sx + SZER / 2 + 17, GY + 11,
-                             fill="#333a44", outline="#4b5562")
-            self.create_oval(sx - SZER / 2 - 12, GY - 5, sx + SZER / 2 + 12, GY + 8,
-                             fill="#262c34", outline="#3c444f")
+        if mig:
+            kol_led = "#f2b544"
+        elif p > 0.9:
+            kol_led = "#37c76a"
+        else:
+            kol_led = "#e5484d"
 
-            if widoczne < 4:
-                # schowany — pokrywa rowno z bruk
-                self.create_oval(sx - SZER / 2 - 1, GY - 3, sx + SZER / 2 + 1, GY + 6,
-                                 fill="#1f242b", outline="#4b5562")
-                continue
-
-            gora = GY - widoczne
-
-            if mig:
-                kol_led = "#f2b544"
-            elif p > 0.9:
-                kol_led = "#37c76a"
-            else:
-                kol_led = "#e5484d"
-
-            # --- cien na nawierzchni ---
-            self.create_oval(sx - SZER / 2 - 6, GY - 4,
-                             sx + SZER / 2 + 20 + widoczne * 0.42, GY + 10,
-                             fill="#0e1218", outline="")
-
-            # --- poswiata LED ZA korpusem: widac tylko obrys swiatla ---
-            self._poswiata(sx, gora + 13, 17, kol_led, 5)
-
-            # --- korpus ze stali szczotkowanej ---
-            for i in range(pasm):
-                t = i / (pasm - 1.0)
-                x1 = sx - SZER / 2 + t * SZER
-                x2 = sx - SZER / 2 + (t + 1.0 / (pasm - 1)) * SZER
-                self.create_rectangle(x1, gora + 6, x2 + 1, GY + 4,
-                                      fill=slup_kolor(t), outline="")
-            # delikatne rysy szczotkowania
-            for yy in range(int(gora) + 22, int(GY), 13):
-                self.create_line(sx - SZER / 2 + 3, yy, sx + SZER / 2 - 3, yy,
-                                 fill="#8d99a6", width=1)
-
-            # --- pas odblaskowy tuz pod glowica ---
-            yb = gora + 20
-            if yb + 9 < GY:
+        # ---------- 1. korpusy (moga wystawac ponizej jezdni) ----------
+        if widoczne > 1:
+            for sx in pozycje:
+                gora = GY - widoczne
+                self._poswiata(sx, gora + 13, 17, kol_led, 5)
+                for i in range(pasm):
+                    t = i / (pasm - 1.0)
+                    x1 = sx - SZER / 2 + t * SZER
+                    x2 = sx - SZER / 2 + (t + 1.0 / (pasm - 1)) * SZER
+                    self.create_rectangle(x1, gora + 6, x2 + 1, GY + 30,
+                                          fill=stal(t), outline="")
+                for yy in range(int(gora) + 22, int(GY) + 24, 13):
+                    self.create_line(sx - SZER / 2 + 3, yy, sx + SZER / 2 - 3, yy,
+                                     fill=SC["rysy"], width=1)
+                yb = gora + 20
                 for i in range(pasm):
                     t = i / (pasm - 1.0)
                     x1 = sx - SZER / 2 + t * SZER
@@ -484,25 +518,54 @@ class Scena(tk.Canvas):
                     baza = "#d33c40" if 0.18 < t < 0.42 or 0.62 < t < 0.86 else "#f2f5f9"
                     self.create_rectangle(x1, yb, x2 + 1, yb + 9,
                                           fill=mix(baza, "#ffffff", j * 0.30), outline="")
+                for dx in (-7, 0, 7):
+                    self.create_rectangle(sx + dx - 2, gora + 10, sx + dx + 2, gora + 16,
+                                          fill=kol_led, outline="")
+                self.create_rectangle(sx - SZER / 2, gora + 2, sx + SZER / 2, gora + 9,
+                                      fill=mix(SC["glowica"], "#000000", 0.15), outline="")
+                self.create_oval(sx - SZER / 2, gora - 4, sx + SZER / 2, gora + 8,
+                                 fill=SC["glowica"], outline=SC["krawedz"])
+                self.create_oval(sx - SZER / 2 + 5, gora - 2, sx + SZER / 2 - 5, gora + 4,
+                                 fill=SC["glowica2"], outline="")
 
-            # --- szczeliny sygnalizacji LED w plaszczu ---
-            for dx in (-7, 0, 7):
-                self.create_rectangle(sx + dx - 2, gora + 10, sx + dx + 2, gora + 16,
-                                      fill=kol_led, outline="")
+        # ---------- 2. jezdnia NA korpusach — tu slupek wchodzi w grunt ----------
+        self._gradient(0, GY, W, self.H, SC["jezdnia1"], SC["jezdnia2"], 12)
+        self.create_line(0, GY, W, GY, fill=SC["krawedz"], width=2)
+        for x in range(-30, W, 78):
+            self.create_rectangle(x, GY + 46, x + 40, GY + 52,
+                                  fill=SC["pasy"], outline="")
 
-            # --- czarna glowica ---
-            self.create_rectangle(sx - SZER / 2, gora + 2, sx + SZER / 2, gora + 9,
-                                  fill="#20262e", outline="")
-            self.create_oval(sx - SZER / 2, gora - 4, sx + SZER / 2, gora + 8,
-                             fill="#181d24", outline="#39424e")
-            self.create_oval(sx - SZER / 2 + 5, gora - 2, sx + SZER / 2 - 5, gora + 4,
-                             fill="#2b323b", outline="")
+        # ---------- 3. cienie i plyty bazowe na wierzchu ----------
+        for sx in pozycje:
+            if widoczne > 4:
+                self.create_oval(sx - SZER / 2 - 6, GY - 3,
+                                 sx + SZER / 2 + 18 + widoczne * 0.40, GY + 9,
+                                 fill=SC["cien"], outline="")
+            self.create_oval(sx - SZER / 2 - 17, GY - 7, sx + SZER / 2 + 17, GY + 11,
+                             fill=SC["plyta"], outline=SC["krawedz"])
+            self.create_oval(sx - SZER / 2 - 12, GY - 5, sx + SZER / 2 + 12, GY + 8,
+                             fill=SC["plyta2"], outline="")
+            if widoczne <= 4:
+                # pokrywa rowno z nawierzchnia — slupek calkowicie schowany
+                self.create_oval(sx - SZER / 2 - 1, GY - 3, sx + SZER / 2 + 1, GY + 6,
+                                 fill=mix(SC["plyta2"], SC["stal1"], 0.35),
+                                 outline=SC["plyta"])
+            else:
+                # ciemna szczelina wokol korpusu wchodzacego w grunt
+                self.create_oval(sx - SZER / 2 - 2, GY - 3, sx + SZER / 2 + 2, GY + 6,
+                                 fill="#0d1117", outline="")
+                for i in range(pasm):
+                    t = i / (pasm - 1.0)
+                    x1 = sx - SZER / 2 + t * SZER
+                    x2 = sx - SZER / 2 + (t + 1.0 / (pasm - 1)) * SZER
+                    self.create_rectangle(x1, GY - 2, x2 + 1, GY + 2,
+                                          fill=mix(stal(t), "#000000", 0.45), outline="")
 
-        # --- znak zakazu wjazdu przy krawedzi ---
+        # ---------- 4. znak zakazu ----------
         zx = px + 196
-        self.create_line(zx, GY, zx, GY - 96, fill="#39424e", width=4)
+        self.create_line(zx, GY, zx, GY - 96, fill=SC["krawedz"], width=4)
         self.create_oval(zx - 20, GY - 130, zx + 20, GY - 90,
-                         fill="#c9302f" if p < 0.5 else "#2a3038",
+                         fill="#c9302f" if p < 0.5 else mix(SC["plyta"], "#000000", 0.2),
                          outline="#eef2f7", width=3)
         self.create_rectangle(zx - 13, GY - 114, zx + 13, GY - 106,
                               fill="#eef2f7", outline="")
@@ -600,18 +663,18 @@ class Scena(tk.Canvas):
                 "otwarty_stop": ("PRZEJAZD OTWARTY — czeka na zamkniecie", WARN),
                 "czekanie": (f"AUTOZAMYKANIE ZA {self.odliczanie:.0f} s", WARN),
                 "zamykanie": (n_zamykanie, WARN),
-                "odmowa": ("DOSTEP ZABLOKOWANY", "#e05a5f"),
-                "cofa": ("DOSTEP ZABLOKOWANY", "#e05a5f")}.get(self.faza, ("GOTOWY", DIM))
+                "odmowa": ("DOSTEP ZABLOKOWANY", SC["alarm"]),
+                "cofa": ("DOSTEP ZABLOKOWANY", SC["alarm"])}.get(self.faza, ("GOTOWY", DIM))
         # panel lewy
-        self.create_rectangle(18, 18, 300, 88, fill="#0d141d", outline="#243040")
-        self.create_text(34, 40, text="BRAMA GLOWNA", anchor="w", fill=FG,
+        self.create_rectangle(18, 18, 300, 88, fill=SC["tlo_hud"], outline=SC["ramka_hud"])
+        self.create_text(34, 40, text="ZAPORA — WJAZD GLOWNY", anchor="w", fill=FG,
                          font=("Segoe UI Semibold", 12))
         self.create_text(34, 66, text=datetime.now().strftime("%d.%m.%Y   %H:%M:%S"),
                          anchor="w", fill=DIM, font=("Consolas", 10))
         # panel prawy - stan
         wys = 146 if self.powod else (118 if self.kto else 74)
         self.create_rectangle(W - 340, 18, W - 18, wys,
-                              fill="#0d141d", outline="#243040")
+                              fill=SC["tlo_hud"], outline=SC["ramka_hud"])
         self.create_oval(W - 322, 38, W - 310, 50, fill=stan[1], outline="")
         self.create_text(W - 300, 44, text=stan[0], anchor="w", fill=stan[1],
                          font=("Segoe UI Semibold", 11))
@@ -622,7 +685,7 @@ class Scena(tk.Canvas):
                              font=("Consolas", 10))
         if self.powod:
             self.create_text(W - 20, 132, text=self.powod, anchor="e",
-                             fill="#e05a5f", font=("Segoe UI", 9))
+                             fill=SC["alarm"], font=("Segoe UI", 9))
         # informacja o trybie przekaznika
         self.create_text(20, self.H - 22,
                          text=("przekaznik: impuls" if self.tryb == "impuls"
@@ -630,11 +693,11 @@ class Scena(tk.Canvas):
                               + f"   ·   czas otwarcia {self.czas_otwarcia} s"
                               + ("   ·   autozamykanie" if self.autozamykanie
                                  else "   ·   BEZ autozamykania"),
-                         anchor="w", fill="#54606e", font=("Consolas", 9))
+                         anchor="w", fill=DIM, font=("Consolas", 9))
         # pasek postepu ramienia
         bw = 200
         self.create_rectangle(W - 340, self.H - 40, W - 340 + bw, self.H - 30,
-                              fill="#151c26", outline="#243040")
+                              fill=BG3, outline=SC["ramka_hud"])
         self.create_rectangle(W - 340, self.H - 40,
                               W - 340 + bw * self.postep, self.H - 30,
                               fill=ACC, outline="")
@@ -643,6 +706,11 @@ class Scena(tk.Canvas):
 
     # ---------- animacja ----------
     def _petla(self):
+        try:
+            if not self.winfo_exists():
+                return
+        except Exception:
+            return
         self.krok()
         self.rysuj()
         self.after(24, self._petla)
@@ -787,6 +855,8 @@ class App(tk.Tk):
             pass
 
         self.d = wczytaj()
+        ustaw_motyw(self.d.get("motyw", "ciemny"))
+        self.configure(bg=BG)
         self.mod_idx = 0
         self.widok = "podglad"
         self.logo_img = None
@@ -863,7 +933,7 @@ class App(tk.Tk):
 
         self.tabs = {}
         for k, t in [("podglad", "PODGLAD"), ("moduly", "MODULY I KARTY SIM"),
-                     ("historia", "HISTORIA I RAPORTY")]:
+                     ("sterownik", "STEROWNIK"), ("historia", "HISTORIA I RAPORTY")]:
             b = tk.Label(head, text=t, bg=BG, fg=DIM, font=("Segoe UI Semibold", 10),
                          padx=18, pady=8, cursor="hand2")
             b.pack(side="left", padx=(0, 6))
@@ -872,7 +942,8 @@ class App(tk.Tk):
 
         prawy = tk.Frame(head, bg=BG)
         prawy.pack(side="right")
-        for txt, cmd in [("?  Instrukcja", self.okno_instrukcja),
+        for txt, cmd in [(self._etykieta_motywu(), self.przelacz_motyw),
+                         ("?  Instrukcja", self.okno_instrukcja),
                          ("O programie", self.okno_o_programie),
                          ("Zmien PIN", self.okno_pin),
                          ("Zablokuj", self.zablokuj)]:
@@ -885,9 +956,11 @@ class App(tk.Tk):
 
         self.f_podglad = tk.Frame(self.kontener, bg=BG)
         self.f_moduly = tk.Frame(self.kontener, bg=BG)
+        self.f_sterownik = tk.Frame(self.kontener, bg=BG)
         self.f_historia = tk.Frame(self.kontener, bg=BG)
         self._buduj_podglad()
         self._buduj_moduly()
+        self._buduj_sterownik()
         self._buduj_historie()
         self.przelacz("podglad")
 
@@ -895,7 +968,7 @@ class App(tk.Tk):
         self.widok = k
         for kk, b in self.tabs.items():
             b.config(fg=FG if kk == k else DIM, bg=BG3 if kk == k else BG)
-        for f in (self.f_podglad, self.f_moduly, self.f_historia):
+        for f in (self.f_podglad, self.f_moduly, self.f_sterownik, self.f_historia):
             f.pack_forget()
         if k == "podglad":
             self.odswiez()
@@ -903,6 +976,9 @@ class App(tk.Tk):
         elif k == "moduly":
             self.odswiez_moduly()
             self.f_moduly.pack(fill="both", expand=True)
+        elif k == "sterownik":
+            self.odswiez_sterownik()
+            self.f_sterownik.pack(fill="both", expand=True)
         else:
             self.odswiez_historie()
             self.f_historia.pack(fill="both", expand=True)
@@ -919,7 +995,7 @@ class App(tk.Tk):
                                      width=42)
         self.cb_modul.pack(side="left")
         self.cb_modul.bind("<<ComboboxSelected>>", self.zmien_modul)
-        self.lbl_sim = tk.Label(wyb, text="", bg=BG, fg="#54606e",
+        self.lbl_sim = tk.Label(wyb, text="", bg=BG, fg=DIM,
                                 font=("Consolas", 9))
         self.lbl_sim.pack(side="left", padx=14)
 
@@ -952,8 +1028,8 @@ class App(tk.Tk):
                            ("ostatnio", "OSTATNIO", 120, "w")]:
             self.tv.heading(c, text=t)
             self.tv.column(c, width=w, anchor=a)
-        self.tv.tag_configure("blok", foreground="#e05a5f")
-        self.tv.tag_configure("ogr", foreground="#e8a33d")
+        self.tv.tag_configure("blok", foreground="#d6444a")
+        self.tv.tag_configure("ogr", foreground=WARN)
         self.tv.pack(fill="both", expand=True)
         self.tv.bind("<Double-1>", lambda e: self.edytuj())
 
@@ -1023,7 +1099,7 @@ class App(tk.Tk):
         self.f_do = tk.StringVar(value="")
         e2 = ttk.Entry(fl, textvariable=self.f_do, width=12)
         e2.pack(side="left")
-        tk.Label(fl, text="(RRRR-MM-DD)", bg=BG, fg="#54606e",
+        tk.Label(fl, text="(RRRR-MM-DD)", bg=BG, fg=DIM,
                  font=("Segoe UI", 8)).pack(side="left", padx=(8, 0))
         for e in (e1, e2):
             e.bind("<Return>", lambda ev: self.odswiez_historie())
@@ -1044,7 +1120,7 @@ class App(tk.Tk):
         self.tvh.configure(yscrollcommand=sb.set)
         sb.pack(side="right", fill="y")
         self.tvh.pack(fill="both", expand=True)
-        self.tvh.tag_configure("reczne", foreground="#e8a33d")
+        self.tvh.tag_configure("reczne", foreground=WARN)
 
         bar = tk.Frame(f, bg=BG)
         bar.pack(fill="x", padx=20, pady=14)
@@ -1278,7 +1354,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
             self.tv.delete(i)
         for i, n in enumerate(m.get("numery", [])):
             ile, ost = self._stat_osoby(n.get("imie", ""))
-            ok, powod = sprawdz_dostep(n)
+            ok, powod = sprawdz_dostep(n, modul=m)
             if not n.get("aktywny", True):
                 stan, tag = "ZABLOKOWANY", "blok"
             elif ok:
@@ -1377,7 +1453,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         ttk.Entry(godz, textvariable=v_wd, width=12).pack(side="left", padx=6)
 
         tk.Label(w, text="godziny GG:MM,  data RRRR-MM-DD (puste = bezterminowo)",
-                 bg=BG2, fg="#54606e", font=("Segoe UI", 8)).pack(anchor="w",
+                 bg=BG2, fg=DIM, font=("Segoe UI", 8)).pack(anchor="w",
                                                                   padx=24, pady=(6, 0))
         v_akt = tk.BooleanVar(value=n.get("aktywny", True))
         tk.Checkbutton(w, text="Numer aktywny (odznacz aby zablokowac wjazd)",
@@ -1439,7 +1515,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
             i = 0
             self.tv.selection_set("0")
         n = lst[i]
-        ok, powod = sprawdz_dostep(n)
+        ok, powod = sprawdz_dostep(n, modul=m)
         self.scena.parametry(m)
         self.scena.przejazd(n.get("imie", "?"), n.get("tel", ""), ok, powod)
         self.zapisz_wjazd(n.get("imie", "?"), n.get("tel", ""),
@@ -1469,11 +1545,11 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
                            "dzialaja juz teraz w symulacji.",
                  bg=BG, fg=DIM, font=("Segoe UI", 9)).pack(anchor="w", pady=(2, 0))
 
-        pas = tk.Frame(f, bg="#2a2418")
+        pas = tk.Frame(f, bg=mix(BG2, WARN, 0.16))
         pas.pack(fill="x", padx=20, pady=(0, 12))
         tk.Label(pas, text="  TRYB DEMO — moduly nie sa jeszcze polaczone przez internet. "
                            "Ustawienia sa zapisywane i beda wyslane do sprzetu po podlaczeniu.",
-                 bg="#2a2418", fg="#e8a33d", font=("Segoe UI", 9),
+                 bg=mix(BG2, WARN, 0.16), fg=WARN, font=("Segoe UI", 9),
                  anchor="w", pady=9).pack(fill="x")
 
         srodek = tk.Frame(f, bg=BG)
@@ -1481,17 +1557,18 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
 
         lewa = tk.Frame(srodek, bg=BG)
         lewa.pack(side="left", fill="both", expand=True)
-        cols = ("nazwa", "sim", "typ", "tryb", "czas", "auto", "ile", "stan")
+        cols = ("nazwa", "sim", "typ", "ster", "praca", "czas", "ile", "stan")
         self.tvm = ttk.Treeview(lewa, columns=cols, show="headings", height=9)
-        for c, t, w, a in [("nazwa", "OBIEKT", 175, "w"), ("sim", "KARTA SIM", 130, "w"),
-                           ("typ", "TYP MODULU", 155, "w"), ("tryb", "PRZEKAZNIK", 95, "w"),
+        for c, t, w, a in [("nazwa", "OBIEKT", 165, "w"), ("sim", "KARTA SIM", 125, "w"),
+                           ("typ", "TYP MODULU", 145, "w"),
+                           ("ster", "STEROWANIE", 95, "center"),
+                           ("praca", "TRYB PRACY", 95, "center"),
                            ("czas", "CZAS OTW.", 85, "center"),
-                           ("auto", "AUTOZAMYK.", 95, "center"),
                            ("ile", "NUMEROW", 80, "center"),
-                           ("stan", "POLACZENIE", 100, "center")]:
+                           ("stan", "POLACZENIE", 95, "center")]:
             self.tvm.heading(c, text=t)
             self.tvm.column(c, width=w, anchor=a)
-        self.tvm.tag_configure("demo", foreground="#e8a33d")
+        self.tvm.tag_configure("demo", foreground=WARN)
         self.tvm.pack(fill="both", expand=True)
         self.tvm.bind("<Double-1>", lambda e: self.edytuj_modul())
 
@@ -1507,30 +1584,332 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         prawa = tk.Frame(srodek, bg=BG, width=310)
         prawa.pack(side="left", fill="y", padx=(20, 0))
         prawa.pack_propagate(False)
-        tk.Label(prawa, text="Co bedzie po podlaczeniu sprzetu", bg=BG, fg=DIM,
+        tk.Label(prawa, text="Sterownik", bg=BG, fg=DIM,
                  font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 8))
         karta = tk.Frame(prawa, bg=BG2)
         karta.pack(fill="both", expand=True)
-        opisy = [
-            ("Dodawanie numerow przez SMS",
-             "program wysle komende do karty SIM w module"),
-            ("Sterowanie przekaznikiem",
-             "otwarcie zdalnie z tego okna, bez dzwonienia"),
-            ("Czas otwarcia i autozamykanie",
-             "ustawienia zostana zapisane w module"),
-            ("Harmonogram",
-             "moduly z pamiecia czasowa dostana ograniczenia; "
-             "pozostale beda pilnowane przez program"),
-            ("Stan polaczenia",
-             "odczyt zasiegu GSM i stanu wejsc"),
-        ]
-        for tyt, opis in opisy:
-            tk.Label(karta, text="•  " + tyt, bg=BG2, fg=FG, anchor="w",
-                     font=("Segoe UI Semibold", 9),
-                     wraplength=270, justify="left").pack(anchor="w", padx=16, pady=(14, 2))
-            tk.Label(karta, text=opis, bg=BG2, fg=DIM, anchor="w",
-                     font=("Segoe UI", 9), wraplength=270,
-                     justify="left").pack(anchor="w", padx=26)
+
+        pol = tk.Frame(karta, bg=BG2)
+        pol.pack(fill="x", padx=16, pady=(14, 4))
+        tk.Label(pol, text="Polaczenie", bg=BG2, fg=FG,
+                 font=("Segoe UI Semibold", 10)).pack(side="left")
+        self.lbl_sygnal = tk.Label(pol, text="brak — tryb demo", bg=BG2, fg=WARN,
+                                   font=("Consolas", 9))
+        self.lbl_sygnal.pack(side="right")
+        tk.Frame(karta, bg=BG3, height=1).pack(fill="x", padx=16, pady=(6, 12))
+
+        tk.Label(karta, text="Odczyt / zapis danych do sterownika", bg=BG2, fg=DIM,
+                 font=("Segoe UI", 9)).pack(anchor="w", padx=16)
+        g1 = tk.Frame(karta, bg=BG2)
+        g1.pack(fill="x", padx=16, pady=(8, 4))
+        ttk.Button(g1, text="Pobierz ze sterownika",
+                   command=lambda: self.sterownik_demo("odczyt")).pack(fill="x", pady=2)
+        ttk.Button(g1, text="Wgraj do sterownika", style="Acc.TButton",
+                   command=lambda: self.sterownik_demo("zapis")).pack(fill="x", pady=2)
+
+        tk.Frame(karta, bg=BG3, height=1).pack(fill="x", padx=16, pady=12)
+        tk.Label(karta, text="Kopia zapasowa ustawien", bg=BG2, fg=DIM,
+                 font=("Segoe UI", 9)).pack(anchor="w", padx=16)
+        g2 = tk.Frame(karta, bg=BG2)
+        g2.pack(fill="x", padx=16, pady=(8, 4))
+        ttk.Button(g2, text="Zapis kopii danych",
+                   command=self.kopia_zapis).pack(fill="x", pady=2)
+        ttk.Button(g2, text="Odczyt kopii danych",
+                   command=self.kopia_odczyt).pack(fill="x", pady=2)
+
+        tk.Frame(karta, bg=BG3, height=1).pack(fill="x", padx=16, pady=12)
+        self.lbl_ster = tk.Label(karta, text="", bg=BG2, fg=DIM, anchor="w",
+                                 justify="left", font=("Consolas", 9), wraplength=260)
+        self.lbl_ster.pack(anchor="w", padx=16, pady=(0, 14))
+
+    def opis_sterownika(self):
+        m = self.modul()
+        self.lbl_ster.config(
+            text=f"kod dostepu:  {m.get('haslo', '')}\n"
+                 f"sterowanie:   {m.get('tryb_sterowania', '—')}\n"
+                 f"tryb pracy:   {m.get('tryb_pracy', '—')}\n"
+                 f"zalaczenie:   {m.get('zalaczenie_s', 1)} s\n"
+                 f"wyjscie:      {'impuls' if m.get('tryb') == 'impuls' else 'toggle ON/OFF'}\n"
+                 f"czas otwarcia:{m.get('czas_otwarcia', 8)} s")
+
+    # ---------------- WIDOK: STEROWNIK ----------------
+    def _karta(self, rodzic, tytul, ikona=""):
+        k = tk.Frame(rodzic, bg=BG2)
+        naglowek = tk.Frame(k, bg=BG2)
+        naglowek.pack(fill="x", padx=16, pady=(12, 0))
+        tk.Label(naglowek, text=tytul, bg=BG2, fg=FG,
+                 font=("Segoe UI Semibold", 10)).pack(side="left")
+        tk.Frame(k, bg=BG3, height=1).pack(fill="x", padx=16, pady=(8, 0))
+        wnetrze = tk.Frame(k, bg=BG2)
+        wnetrze.pack(fill="both", expand=True, padx=16, pady=12)
+        return k, naglowek, wnetrze
+
+    def _buduj_sterownik(self):
+        f = self.f_sterownik
+        top = tk.Frame(f, bg=BG)
+        top.pack(fill="x", padx=20, pady=(6, 10))
+        tk.Label(top, text="Sterownik GSM", bg=BG, fg=FG,
+                 font=("Segoe UI Semibold", 15)).pack(side="left")
+        self.v_obiekt_st = tk.StringVar()
+        self.cb_obiekt_st = ttk.Combobox(top, textvariable=self.v_obiekt_st,
+                                         state="readonly", width=34)
+        self.cb_obiekt_st.pack(side="right")
+        self.cb_obiekt_st.bind("<<ComboboxSelected>>", self.zmien_modul_st)
+
+        # ---- POLACZENIE ----
+        k1, nag1, w1 = self._karta(f, "Polaczenie")
+        k1.pack(fill="x", padx=20)
+        self.cv_sygnal = tk.Canvas(nag1, width=64, height=18, bg=BG2,
+                                   highlightthickness=0)
+        self.cv_sygnal.pack(side="right")
+        self.lbl_proc = tk.Label(nag1, text="0%", bg=BG2, fg=DIM,
+                                 font=("Segoe UI Semibold", 10))
+        self.lbl_proc.pack(side="right", padx=(0, 8))
+
+        lewy1 = tk.Frame(w1, bg=BG2)
+        lewy1.pack(side="left")
+        self.btn_pol = ttk.Button(lewy1, text="Polacz", style="Acc.TButton",
+                                  command=self.przel_polaczenie)
+        self.btn_pol.pack(side="left")
+        self.lbl_stan_pol = tk.Label(lewy1, text="rozlaczony", bg=BG2, fg=DIM,
+                                     font=("Segoe UI", 9))
+        self.lbl_stan_pol.pack(side="left", padx=14)
+
+        self.v_logi = tk.BooleanVar(value=False)
+        tk.Checkbutton(w1, text="Pokaz logi", variable=self.v_logi, bg=BG2, fg=DIM,
+                       selectcolor=BG3, activebackground=BG2, activeforeground=FG,
+                       font=("Segoe UI", 9),
+                       command=self.przel_logi).pack(side="right")
+
+        # ---- ODCZYT / ZAPIS ----
+        k2, _, w2 = self._karta(f, "Odczyt / zapis danych do sterownika")
+        k2.pack(fill="x", padx=20, pady=(12, 0))
+        siatka = tk.Frame(w2, bg=BG2)
+        siatka.pack(fill="x")
+        siatka.columnconfigure(0, weight=1)
+        siatka.columnconfigure(1, weight=1)
+        ttk.Button(siatka, text="Pobierz ze sterownika", style="Ok.TButton",
+                   command=lambda: self.sterownik_demo("odczyt")).grid(
+                       row=0, column=0, sticky="ew", padx=(0, 6), pady=3)
+        ttk.Button(siatka, text="Wgraj do sterownika", style="Acc.TButton",
+                   command=lambda: self.sterownik_demo("zapis")).grid(
+                       row=0, column=1, sticky="ew", padx=(6, 0), pady=3)
+        ttk.Button(siatka, text="Zapis kopii danych",
+                   command=self.kopia_zapis).grid(row=1, column=0, sticky="ew",
+                                                  padx=(0, 6), pady=3)
+        ttk.Button(siatka, text="Odczyt kopii danych",
+                   command=self.kopia_odczyt).grid(row=1, column=1, sticky="ew",
+                                                   padx=(6, 0), pady=3)
+
+        # ---- KOD DOSTEPU + TRYB STEROWANIA ----
+        rz = tk.Frame(f, bg=BG)
+        rz.pack(fill="x", padx=20, pady=(12, 0))
+        k3, _, w3 = self._karta(rz, "Kod dostepu")
+        k3.pack(side="left", fill="both", expand=True, padx=(0, 6))
+        self.v_kod = tk.StringVar()
+        e = ttk.Entry(w3, textvariable=self.v_kod, font=("Consolas", 16),
+                      justify="center")
+        e.pack(fill="x", ipady=6)
+        self.v_kod.trace_add("write", lambda *a: self.zapisz_sterownik())
+
+        k4, _, w4 = self._karta(rz, "Tryb sterowania")
+        k4.pack(side="left", fill="both", expand=True, padx=(6, 0))
+        self.v_ster_tryb = tk.StringVar()
+        cb = ttk.Combobox(w4, textvariable=self.v_ster_tryb, state="readonly",
+                          values=["CLIP", "SMS", "CLIP+SMS"])
+        cb.pack(fill="x", ipady=6)
+        cb.bind("<<ComboboxSelected>>", lambda e: self.zapisz_sterownik())
+
+        # ---- TRYB PRACY + KONFIGURACJA WYJSCIA ----
+        rz2 = tk.Frame(f, bg=BG)
+        rz2.pack(fill="x", padx=20, pady=(12, 0))
+        k5, _, w5 = self._karta(rz2, "Tryb pracy")
+        k5.pack(side="left", fill="both", expand=True, padx=(0, 6))
+        self.v_praca = tk.StringVar()
+        for val, lab in [("prywatny", "Prywatny"), ("publiczny", "Publiczny")]:
+            tk.Radiobutton(w5, text=lab, variable=self.v_praca, value=val, bg=BG2,
+                           fg=FG, selectcolor=BG3, activebackground=BG2,
+                           activeforeground=FG, font=("Segoe UI", 10),
+                           command=self.zapisz_sterownik).pack(side="left", padx=(0, 20))
+        self.lbl_praca = tk.Label(w5, text="", bg=BG2, fg=DIM, font=("Segoe UI", 8))
+        self.lbl_praca.pack(side="left")
+
+        k6, _, w6 = self._karta(rz2, "Konfiguracja wyjscia")
+        k6.pack(side="left", fill="both", expand=True, padx=(6, 0))
+        self.v_wyjscie = tk.StringVar()
+        r1 = tk.Frame(w6, bg=BG2)
+        r1.pack(fill="x")
+        tk.Radiobutton(r1, text="Zalaczenie (s):", variable=self.v_wyjscie,
+                       value="impuls", bg=BG2, fg=FG, selectcolor=BG3,
+                       activebackground=BG2, activeforeground=FG,
+                       font=("Segoe UI", 10),
+                       command=self.zapisz_sterownik).pack(side="left")
+        self.v_zal_s = tk.StringVar()
+        ttk.Entry(r1, textvariable=self.v_zal_s, width=6).pack(side="left", padx=8)
+        self.v_zal_s.trace_add("write", lambda *a: self.zapisz_sterownik())
+        tk.Radiobutton(w6, text="Toggle (ON/OFF)", variable=self.v_wyjscie,
+                       value="stan", bg=BG2, fg=FG, selectcolor=BG3,
+                       activebackground=BG2, activeforeground=FG,
+                       font=("Segoe UI", 10),
+                       command=self.zapisz_sterownik).pack(anchor="w", pady=(8, 0))
+
+        # ---- LOGI ----
+        self.ram_logi = tk.Frame(f, bg=BG)
+        tk.Label(self.ram_logi, text="Logi", bg=BG, fg=DIM,
+                 font=("Segoe UI", 9)).pack(anchor="w", pady=(12, 4))
+        self.txt_logi = tk.Text(self.ram_logi, bg=BG2, fg=FG, height=7, borderwidth=0,
+                                highlightthickness=0, font=("Consolas", 9),
+                                padx=12, pady=8)
+        self.txt_logi.pack(fill="both", expand=True)
+
+        self.polaczony = False
+        self._blok_zapisu = False
+
+    def zmien_modul_st(self, e=None):
+        for i, m in enumerate(self.d["moduly"]):
+            if m["nazwa"] == self.v_obiekt_st.get():
+                self.mod_idx = i
+                break
+        self.odswiez_sterownik()
+
+    def odswiez_sterownik(self):
+        m = self.modul()
+        self._blok_zapisu = True
+        self.cb_obiekt_st.configure(values=[x["nazwa"] for x in self.d["moduly"]])
+        self.v_obiekt_st.set(m["nazwa"])
+        self.v_kod.set(m.get("haslo", ""))
+        self.v_ster_tryb.set(m.get("tryb_sterowania", "CLIP+SMS"))
+        self.v_praca.set(m.get("tryb_pracy", "prywatny"))
+        self.v_wyjscie.set(m.get("tryb", "impuls"))
+        self.v_zal_s.set(str(m.get("zalaczenie_s", 1)))
+        self._blok_zapisu = False
+        self.lbl_praca.config(
+            text="wpuszcza tylko numery z listy" if self.v_praca.get() == "prywatny"
+            else "wpuszcza kazdy numer")
+        self.rysuj_sygnal()
+
+    def zapisz_sterownik(self):
+        if getattr(self, "_blok_zapisu", False):
+            return
+        m = self.modul()
+        m["haslo"] = self.v_kod.get().strip()
+        m["tryb_sterowania"] = self.v_ster_tryb.get()
+        m["tryb_pracy"] = self.v_praca.get()
+        m["tryb"] = self.v_wyjscie.get()
+        try:
+            m["zalaczenie_s"] = max(1, min(60, int(self.v_zal_s.get() or 1)))
+        except ValueError:
+            pass
+        zapisz(self.d)
+        self.lbl_praca.config(
+            text="wpuszcza tylko numery z listy" if self.v_praca.get() == "prywatny"
+            else "wpuszcza kazdy numer")
+        self.log_ster(f"zmieniono ustawienia: {m['tryb_sterowania']}, "
+                      f"{m['tryb_pracy']}, wyjscie {m['tryb']}")
+
+    def rysuj_sygnal(self):
+        c = self.cv_sygnal
+        c.delete("all")
+        proc = 77 if self.polaczony else 0
+        self.lbl_proc.config(text=f"{proc}%", fg=OK if self.polaczony else DIM)
+        for i in range(5):
+            h = 4 + i * 3
+            akt = self.polaczony and (i + 1) * 20 <= proc + 10
+            c.create_rectangle(4 + i * 12, 16 - h, 12 + i * 12, 16,
+                               fill=OK if akt else BG3, outline="")
+
+    def przel_polaczenie(self):
+        self.polaczony = not self.polaczony
+        if self.polaczony:
+            m = self.modul()
+            self.btn_pol.config(text="Rozlacz")
+            self.lbl_stan_pol.config(text="polaczony (symulacja)", fg=OK)
+            self.log_ster(f"polaczono z {m.get('sim') or '(brak numeru SIM)'} — symulacja")
+            self.log_ster("odczyt sygnalu: 77%")
+        else:
+            self.btn_pol.config(text="Polacz")
+            self.lbl_stan_pol.config(text="rozlaczony", fg=DIM)
+            self.log_ster("rozlaczono")
+        self.rysuj_sygnal()
+
+    def przel_logi(self):
+        if self.v_logi.get():
+            self.ram_logi.pack(fill="both", expand=True, padx=20, pady=(0, 16))
+            self.log_ster("wlaczono podglad logow")
+        else:
+            self.ram_logi.pack_forget()
+
+    def log_ster(self, txt):
+        try:
+            self.txt_logi.insert("1.0", f"{datetime.now():%H:%M:%S}  {txt}\n")
+            if int(self.txt_logi.index("end-1c").split(".")[0]) > 200:
+                self.txt_logi.delete("200.0", "end")
+        except Exception:
+            pass
+        self.zdarzenie(txt)
+
+    def sterownik_demo(self, co):
+        m = self.modul()
+        if co == "odczyt":
+            messagebox.showinfo(
+                "Tryb demo",
+                "Odczyt ustawien ze sterownika bedzie mozliwy po podlaczeniu modulu.\n\n"
+                f"Komenda poszlaby na numer SIM: {m.get('sim') or '(nie podano)'}")
+        else:
+            messagebox.showinfo(
+                "Tryb demo",
+                "Zapis ustawien do sterownika bedzie mozliwy po podlaczeniu modulu.\n\n"
+                f"Do wyslania: kod {m.get('haslo', '')}, "
+                f"tryb {m.get('tryb_sterowania', '')}, "
+                f"zalaczenie {m.get('zalaczenie_s', 1)} s.")
+        self.zdarzenie(f"sterownik ({co}) — tryb demo")
+
+    def kopia_zapis(self):
+        sc = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            initialfile=f"zapora-kopia-{datetime.now():%Y-%m-%d}.json",
+            filetypes=[("Kopia ustawien", "*.json")])
+        if not sc:
+            return
+        try:
+            with open(sc, "w", encoding="utf-8") as f:
+                json.dump(self.d, f, ensure_ascii=False, indent=2)
+            self.zdarzenie("zapisano kopie ustawien")
+            messagebox.showinfo("Gotowe",
+                                f"Zapisano {len(self.d.get('moduly', []))} obiektow "
+                                f"i {len(self.d.get('historia', []))} wpisow historii.")
+        except Exception as e:
+            messagebox.showerror("Blad", str(e))
+
+    def kopia_odczyt(self):
+        sc = filedialog.askopenfilename(filetypes=[("Kopia ustawien", "*.json"),
+                                                   ("Wszystkie pliki", "*.*")])
+        if not sc:
+            return
+        try:
+            with open(sc, "r", encoding="utf-8") as f:
+                nowa = json.load(f)
+            if "moduly" not in nowa:
+                messagebox.showwarning("Zly plik", "To nie jest kopia ustawien ZAPORA-AWF.")
+                return
+            ile_m = len(nowa.get("moduly", []))
+            ile_h = len(nowa.get("historia", []))
+            if not messagebox.askyesno(
+                    "Potwierdz",
+                    f"Wczytac kopie?\n\nObiektow: {ile_m}\nWpisow historii: {ile_h}\n\n"
+                    "Obecne dane zostana zastapione."):
+                return
+            nowa.setdefault("pin", self.d.get("pin"))
+            nowa.setdefault("motyw", self.d.get("motyw", "ciemny"))
+            nowa.setdefault("marka", self.d.get("marka"))
+            self.d = nowa
+            zapisz(self.d)
+            self.mod_idx = 0
+            self.odswiez_moduly()
+            self.zdarzenie(f"wczytano kopie: {ile_m} obiektow")
+            messagebox.showinfo("Gotowe", "Kopia wczytana.")
+        except Exception as e:
+            messagebox.showerror("Blad", str(e))
 
     def odswiez_moduly(self):
         for i in self.tvm.get_children():
@@ -1539,10 +1918,14 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
             self.tvm.insert("", "end", iid=str(i), tags=("demo",),
                             values=(m.get("nazwa", ""), m.get("sim") or "—",
                                     m.get("typ", ""),
-                                    "impuls" if m.get("tryb") == "impuls" else "stan",
+                                    m.get("tryb_sterowania", "—"),
+                                    m.get("tryb_pracy", "—"),
                                     f"{m.get('czas_otwarcia', 8)} s",
-                                    "tak" if m.get("autozamykanie") else "nie",
                                     len(m.get("numery", [])), "demo"))
+        try:
+            self.opis_sterownika()
+        except Exception:
+            pass
 
     def _sel_modul(self):
         s = self.tvm.selection()
@@ -1584,7 +1967,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         w = tk.Toplevel(self)
         w.title("Modul GSM")
         w.configure(bg=BG2)
-        w.geometry("500x640")
+        w.geometry("500x780")
         w.transient(self)
         w.grab_set()
         w.resizable(False, False)
@@ -1599,7 +1982,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
                      font=("Segoe UI", 9)).pack(anchor="w", padx=24, pady=(10, 3))
             v = tk.StringVar(value=str(m.get(k, "")))
             ttk.Entry(w, textvariable=v).pack(fill="x", padx=24, ipady=4)
-            tk.Label(w, text=hint, bg=BG2, fg="#54606e",
+            tk.Label(w, text=hint, bg=BG2, fg=DIM,
                      font=("Segoe UI", 8)).pack(anchor="w", padx=24)
             pola[k] = v
 
@@ -1638,6 +2021,29 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
                        activebackground=BG2, activeforeground=FG,
                        font=("Segoe UI", 9)).pack(anchor="w", padx=22, pady=(14, 0))
 
+        tk.Label(w, text="STEROWNIK GSM", bg=BG2, fg=ACC,
+                 font=("Segoe UI Semibold", 9)).pack(anchor="w", padx=24, pady=(20, 6))
+        st = tk.Frame(w, bg=BG2)
+        st.pack(anchor="w", padx=24, fill="x")
+        tk.Label(st, text="Tryb sterowania", bg=BG2, fg=DIM,
+                 font=("Segoe UI", 8)).grid(row=0, column=0, sticky="w", padx=(0, 16))
+        tk.Label(st, text="Tryb pracy", bg=BG2, fg=DIM,
+                 font=("Segoe UI", 8)).grid(row=0, column=1, sticky="w", padx=(0, 16))
+        tk.Label(st, text="Zalaczenie (s)", bg=BG2, fg=DIM,
+                 font=("Segoe UI", 8)).grid(row=0, column=2, sticky="w")
+        v_ster = tk.StringVar(value=m.get("tryb_sterowania", "CLIP+SMS"))
+        ttk.Combobox(st, textvariable=v_ster, state="readonly", width=12,
+                     values=["CLIP", "SMS", "CLIP+SMS"]).grid(row=1, column=0,
+                                                              sticky="w", padx=(0, 16))
+        v_pracy = tk.StringVar(value=m.get("tryb_pracy", "prywatny"))
+        ttk.Combobox(st, textvariable=v_pracy, state="readonly", width=12,
+                     values=["prywatny", "publiczny"]).grid(row=1, column=1,
+                                                            sticky="w", padx=(0, 16))
+        v_zal = tk.StringVar(value=str(m.get("zalaczenie_s", 1)))
+        ttk.Entry(st, textvariable=v_zal, width=8).grid(row=1, column=2, sticky="w")
+        tk.Label(w, text="CLIP = otwiera samo polaczenie.  Publiczny = wpuszcza kazdy numer.",
+                 bg=BG2, fg=DIM, font=("Segoe UI", 8)).pack(anchor="w", padx=24, pady=(6, 0))
+
         tk.Label(w, text="Rodzaj przegrody", bg=BG2, fg=DIM,
                  font=("Segoe UI", 9)).pack(anchor="w", padx=24, pady=(14, 3))
         v_wyg = tk.StringVar(value=m.get("wyglad", "slupki"))
@@ -1657,6 +2063,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
             sim = norm_tel(pola["sim"].get()) if pola["sim"].get().strip() else ""
             try:
                 imp = max(100, min(5000, int(v_imp.get())))
+                int(v_zal.get() or 1)
                 czas = max(1, min(300, int(v_czas.get())))
                 opoz = max(0, min(60, int(v_opoz.get())))
             except ValueError:
@@ -1666,7 +2073,9 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
                       "haslo": pola["haslo"].get().strip(), "typ": v_typ.get(),
                       "tryb": v_tryb.get(), "impuls_ms": imp, "czas_otwarcia": czas,
                       "opoznienie": opoz, "autozamykanie": v_auto.get(),
-                      "wyglad": v_wyg.get()})
+                      "wyglad": v_wyg.get(), "wyglad_wybrany": True,
+                      "tryb_sterowania": v_ster.get(), "tryb_pracy": v_pracy.get(),
+                      "zalaczenie_s": max(1, min(60, int(v_zal.get() or 1)))})
             m.setdefault("numery", [])
             if idx is None:
                 self.d["moduly"].append(m)
@@ -1682,6 +2091,22 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         ttk.Button(bf, text="Zapisz", style="Acc.TButton", command=ok).pack(side="right")
         ttk.Button(bf, text="Anuluj", command=w.destroy).pack(side="right", padx=8)
         w.bind("<Escape>", lambda e: w.destroy())
+
+    def _etykieta_motywu(self):
+        return "Tryb jasny" if self.d.get("motyw", "ciemny") == "ciemny" else "Tryb ciemny"
+
+    def przelacz_motyw(self):
+        nowy = "jasny" if self.d.get("motyw", "ciemny") == "ciemny" else "ciemny"
+        self.d["motyw"] = nowy
+        zapisz(self.d)
+        ustaw_motyw(nowy)
+        self.configure(bg=BG)
+        for w in self.winfo_children():
+            w.destroy()
+        self._styl()
+        self._ui()
+        self.przelacz(self.widok)
+        self.zdarzenie(f"motyw: {nowy}")
 
     # ---------------- EMBLEMAT (gdy brak logo.png) ----------------
     def emblemat(self, cv, S):
@@ -1729,7 +2154,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
 
         kropki = tk.Label(w, text="", bg=BG2, fg=ACC, font=("Segoe UI", 24))
         kropki.pack(pady=(16, 2))
-        info = tk.Label(w, text="", bg=BG2, fg="#e05a5f", font=("Segoe UI", 9))
+        info = tk.Label(w, text="", bg=BG2, fg="#d6444a", font=("Segoe UI", 9))
         info.pack()
 
         stan = {"pin": "", "proby": 0}
@@ -1774,9 +2199,9 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
         for r, rzad in enumerate(uklad):
             for c, znak in enumerate(rzad):
                 if znak == "C":
-                    kol, akcja = "#3a2a2e", kasuj
+                    kol, akcja = mix(BG3, "#d6444a", 0.25), kasuj
                 elif znak == "OK":
-                    kol, akcja = "#1c5c33", zatwierdz
+                    kol, akcja = mix(BG3, OK, 0.35), zatwierdz
                 else:
                     kol, akcja = BG3, (lambda z=znak: wpisz(z))
                 b = tk.Label(klaw, text=znak, bg=kol, fg=FG,
@@ -1786,7 +2211,7 @@ color:#8b95a3;font-size:11px;display:flex;justify-content:space-between}}
                 b.bind("<Button-1>", lambda e, a=akcja: a())
 
         tk.Label(w, text="PIN fabryczny: 1234  —  zmien po pierwszym logowaniu",
-                 bg=BG2, fg="#5c6672", font=("Segoe UI", 8)).pack(pady=(16, 0))
+                 bg=BG2, fg=DIM, font=("Segoe UI", 8)).pack(pady=(16, 0))
 
         w.bind("<Key>", lambda e: wpisz(e.char) if e.char.isdigit() else None)
         w.bind("<BackSpace>", lambda e: kasuj())

@@ -1,10 +1,139 @@
-# ZAPORA-AWF v4.4
+# ZAPORA-AWF v4.8
 
 Akademia Wychowania Fizycznego Jozefa Pilsudskiego w Warszawie — Straz Akademicka.
 System kontroli wjazdu: zapora slupkowa ze slupkami chowanymi w jezdnie.
 
-Wersja demonstracyjna — animacja i pelna konfiguracja dzialaja,
-moduly GSM nie sa jeszcze podpiete.
+## NOWE w v4.8 — osobna zakladka STEROWNIK
+
+Uklad odwzorowuje konfigurator modulu GSM: karty jedna pod druga,
+te same nazwy pol, te same przyciski.
+
+### Polaczenie
+Przycisk **Polacz / Rozlacz**, obok **wskaznik sily sygnalu** (piec slupkow
+i wartosc procentowa) oraz stan tekstowy. Bez podlaczonego modulu dziala
+jako **symulacja** — jest to wprost napisane na ekranie, zeby nikt sie nie pomylil
+przy pokazie.
+
+Checkbox **Pokaz logi** rozwija na dole okno z logiem operacji, ze znacznikami czasu.
+
+### Odczyt / zapis danych do sterownika
+Cztery przyciski w ukladzie 2x2:
+
+| | |
+|---|---|
+| **Pobierz ze sterownika** | **Wgraj do sterownika** |
+| **Zapis kopii danych** | **Odczyt kopii danych** |
+
+Dwa gorne czekaja na sprzet — pokazuja, co i na jaki numer SIM zostaloby wyslane.
+Dwa dolne **dzialaja juz teraz**: zapis i odczyt pelnej kopii ustawien do pliku JSON.
+
+### Kod dostepu i tryb sterowania
+Kod wyswietlany duza czcionka, tryb do wyboru: **CLIP** (otwiera samo polaczenie),
+**SMS**, **CLIP+SMS**.
+
+### Tryb pracy i konfiguracja wyjscia
+**Prywatny** — wpuszcza tylko numery z listy.
+**Publiczny** — wpuszcza kazdy numer. Pod przelacznikiem widac opis wybranego trybu.
+
+Wyjscie: **Zalaczenie (s)** z polem na liczbe sekund albo **Toggle (ON/OFF)**.
+
+**Wszystkie zmiany zapisuja sie od razu**, bez przycisku Zapisz, i od razu
+wplywaja na symulacje — po wlaczeniu trybu publicznego zablokowany numer
+zostanie wpuszczony, a w historii pojawi sie stosowna adnotacja.
+
+## NOWE w v4.7 — opcje jak w konfiguratorze sterownika
+
+Zakladka **MODULY I KARTY SIM** ma teraz po prawej panel **Sterownik**,
+odwzorowujacy uklad typowego konfiguratora modulu GSM.
+
+### Polaczenie
+Stan lacznosci ze sterownikiem. W wersji demonstracyjnej pokazuje
+`brak — tryb demo`; po podlaczeniu modulu bedzie tu sila sygnalu GSM.
+
+### Odczyt / zapis danych do sterownika
+**Pobierz ze sterownika** i **Wgraj do sterownika** — dwa przyciski,
+ktore po podlaczeniu sprzetu beda przenosic ustawienia miedzy programem
+a modulem. Teraz pokazuja, co dokladnie zostaloby wyslane i na jaki numer SIM.
+
+### Kopia zapasowa ustawien — **dziala juz teraz**
+**Zapis kopii danych** zapisuje do pliku JSON komplet: obiekty, numery,
+harmonogramy, historie wjazdow i ustawienia sterownika.
+**Odczyt kopii danych** wczytuje taki plik z powrotem, po potwierdzeniu
+ile obiektow i wpisow zostanie przywroconych.
+
+To najprostszy sposob przeniesienia wszystkiego na inny komputer
+albo zabezpieczenia sie przed pomylka.
+
+### Nowe ustawienia modulu
+
+W oknie edycji obiektu doszla sekcja **STEROWNIK GSM**:
+
+| Ustawienie | Znaczenie |
+|---|---|
+| Tryb sterowania | CLIP (otwiera samo polaczenie) / SMS / CLIP+SMS |
+| Tryb pracy | **prywatny** — wpuszcza tylko numery z listy<br>**publiczny** — wpuszcza kazdy numer |
+| Zalaczenie (s) | dlugosc zalaczenia wyjscia w sekundach |
+
+**Tryb publiczny dziala na zywo** — po jego wlaczeniu symulacja wpuszcza
+rowniez numery zablokowane i te poza harmonogramem, z adnotacja w historii.
+Kolumny w tabeli obiektow pokazuja teraz tryb sterowania i tryb pracy.
+
+## POPRAWKI w v4.6 — dwa bledy z v4.5
+
+**1. Program nie uruchamial sie wcale.**
+W funkcji rysujacej scene byla uzyta zmienna, ktora nigdy nie zostala zdefiniowana.
+Efekt: okno wywalalo sie natychmiast po zalogowaniu komunikatem
+`NameError: name 'p' is not defined`.
+
+**2. Domyslnie rysowal sie szlaban zamiast slupkow.**
+Wczesniejsza zmiana domyslnego rodzaju przegrody nie zadzialala — podmiana
+nie trafila w tekst i przeszla bez sladu. Nowe instalacje pokazywaly szlaban.
+
+Bazy zalozone wczesniej dostana jednorazowa korekte na slupki. Jesli sam
+wybrales rodzaj przegrody w ustawieniach modulu, Twoj wybor zostaje.
+
+### Skad sie wziely
+
+Do tej wersji sprawdzalem kod tylko pod katem skladni, a wyglad renderowalem
+osobnym skryptem odwzorowujacym rysowanie. Zaden z tych sposobow nie uruchamia
+prawdziwego okna, wiec oba bledy przeszly niezauwazone.
+
+Od v4.6 kazda wersja jest **faktycznie uruchamiana** na wirtualnym ekranie:
+otwarcie okna, logowanie PIN-em, przerysowanie sceny we wszystkich stanach
+(3 rodzaje przegrody x 2 motywy x 5 pozycji x 10 faz = 300 kombinacji),
+przelaczanie zakladek i motywu, symulacja przejazdu i odmowy dostepu,
+generowanie raportu. Do tego analiza statyczna wykrywajaca nieistniejace nazwy.
+
+## NOWE w v4.5
+
+### Slupki chowaja sie calkowicie
+
+Wczesniej slupek w koncowej fazie chowania nachodzil na nawierzchnie —
+glowica i pas odblaskowy byly rysowane na jezdni, zamiast pod nia.
+Zmieniona zostala kolejnosc rysowania: **najpierw korpusy, potem jezdnia na nich**,
+a na samym koncu plyty bazowe i cienie. Slupek naprawde wchodzi w grunt.
+
+Po pelnym schowaniu zostaje wylacznie plaska pokrywa rowno z nawierzchnia —
+tak jak w rzeczywistosci. W trakcie chowania widac ciemna szczeline wokol
+korpusu wchodzacego w otwor.
+
+### Tryb jasny i ciemny
+
+Przycisk **Tryb jasny / Tryb ciemny** w prawym gornym rogu okna.
+Przelacza cala aplikacje razem ze scena:
+
+| | tryb ciemny | tryb jasny |
+|---|---|---|
+| Interfejs | granatowy | bialy |
+| Scena | zmierzch, zapalone latarnie | dzien, latarnie zgaszone |
+| Nawierzchnia | ciemny asfalt | jasny beton |
+| Stal slupkow | chlodna, kontrastowa | jasna, matowa |
+| Cienie | glebokie | miekkie |
+
+Wybor zapisuje sie w bazie — program uruchomi sie w tym trybie, w ktorym go zostawisz.
+
+Kontrast tekstu sprawdzony wedlug WCAG w obu trybach; kolor akcentu
+w trybie jasnym zostal przyciemniony, bo pierwotny mial za slaby kontrast na bieli.
 
 ## NOWE w v4.4 — pelne przebrandowanie na AWF
 
