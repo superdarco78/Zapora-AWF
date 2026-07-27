@@ -23,7 +23,6 @@ VersionInfoVersion=4.4.0.0
 VersionInfoCompany={#ProducentApp}
 VersionInfoDescription=ZAPORA-AWF — kontrola wjazdu
 
-; Instalacja dla biezacego uzytkownika — bez pytania o hasło administratora
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 DefaultDirName={autopf}\{#NazwaApp}
@@ -37,7 +36,6 @@ SetupIconFile=ikona.ico
 UninstallDisplayIcon={app}\{#PlikExe}
 UninstallDisplayName={#NazwaApp} {#WersjaApp}
 
-; Windows 7 SP1 i nowsze; oficjalnie testowane na Windows 10 i 11
 MinVersion=6.1sp1
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -59,12 +57,11 @@ Name: "startupicon"; Description: "Uruchamiaj automatycznie przy starcie Windows
     GroupDescription: "Dodatkowe skroty:"; Flags: unchecked
 
 [Files]
-; Cala zawartosc folderu zbudowanego przez PyInstaller (--onedir)
 Source: "dist\ZAPORA-AWF\*"; DestDir: "{app}"; \
     Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "logo.png";  DestDir: "{app}"; Flags: ignoreversion
 Source: "ikona.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "CZYTAJ-WIZUAL.md"; DestDir: "{app}"; DestName: "Instrukcja.txt"; Flags: ignoreversion isreadme
+Source: "CZYTAJ-MNIE.md"; DestDir: "{app}"; DestName: "Instrukcja.txt"; Flags: ignoreversion isreadme
 
 [Icons]
 Name: "{group}\{#NazwaApp}";              Filename: "{app}\{#PlikExe}"
@@ -81,7 +78,6 @@ Filename: "{app}\{#PlikExe}"; Description: "Uruchom {#NazwaApp} teraz"; \
 polski.WelcomeLabel2=Ten kreator zainstaluje program [name/ver] na Twoim komputerze.%n%nPIN fabryczny: 1234 — zmien go po pierwszym uruchomieniu.%n%nZalecane jest zamkniecie innych aplikacji przed kontynuowaniem.
 
 [Code]
-// Przy odinstalowaniu pytamy, czy skasowac rowniez baze numerow i historie.
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   KatDanych: String;
